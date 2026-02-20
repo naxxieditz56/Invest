@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Details - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="mobile-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo" onclick="history.back()">
+        <i class="fas fa-arrow-left" style="margin-right: 10px;"></i> Back
+      </div>
+      <div class="top-icons">
+        <i class="fas fa-share-alt"></i>
+        <i class="fas fa-heart"></i>
+      </div>
+    </div>
+
+    <!-- Product Details -->
+    <div id="productDetails" class="product-details">
+      <!-- Content will be loaded dynamically -->
+    </div>
+
+    <!-- Investment Form -->
+    <div class="investment-form" style="background: rgba(255,255,255,0.15); border-radius: 25px; padding: 20px; margin-top: 20px;">
+      <h3 style="color: white; margin-bottom: 15px;">Invest Now</h3>
+      
+      <div class="form-group">
+        <label style="color: white;">Quantity</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button onclick="updateQuantity(-1)" class="btn-small" style="background: rgba(255,255,255,0.2);">-</button>
+          <input type="number" id="quantity" value="1" min="1" class="form-control" style="text-align: center;">
+          <button onclick="updateQuantity(1)" class="btn-small" style="background: rgba(255,255,255,0.2);">+</button>
+        </div>
+      </div>
+      
+      <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; margin: 15px 0;">
+        <div style="display: flex; justify-content: space-between; color: white; margin-bottom: 10px;">
+          <span>Investment Amount:</span>
+          <span id="totalAmount">₹0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; color: white; margin-bottom: 10px;">
+          <span>Daily Profit:</span>
+          <span id="totalDailyProfit">₹0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; color: white;">
+          <span>Total Income:</span>
+          <span id="totalIncome">₹0</span>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <button onclick="investNow()" class="btn" style="flex: 2;">
+          <i class="fas fa-check-circle"></i> Invest Now
+        </button>
+        <button onclick="addToCart()" class="btn btn-secondary" style="flex: 1;">
+          <i class="fas fa-cart-plus"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="location.href='dashboard.html'">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item active" onclick="location.href='products.html'">
+        <i class="fas fa-box"></i>
+        <span>Products</span>
+      </div>
+      <div class="nav-item" onclick="location.href='promotion.html'">
+        <i class="fas fa-bullhorn"></i>
+        <span>Promotion</span>
+      </div>
+      <div class="nav-item" onclick="location.href='profile.html'">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentProduct = null;
+    let userWallet = 0;
+    
+    // Get product ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        loadProductDetails();
+        loadUserWallet(user.uid);
+      }
+    });
+    
+    function loadProductDetails() {
+      const db = firebase.firestore();
+      db.collection('products').doc(productId).get()
+        .then((doc) => {
+          if (doc.exists) {
+            currentProduct = doc.data();
+            displayProduct(doc.id, currentProduct);
+          } else {
+            alert('Product not found!');
+            window.location.href = 'products.html';
+          }
+        });
+    }
+    
+    function displayProduct(id, product) {
+      const container = document.getElementById('productDetails');
+      container.innerHTML = `
+        <img src="${product.image || 'https://via.placeholder.com/400x200'}" 
+             alt="${product.name}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 20px; margin-bottom: 15px;">
+        
+        <h1 style="color: white; font-size: 28px; margin-bottom: 10px;">${product.name}</h1>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <span class="badge" style="background: linear-gradient(45deg, #4facfe, #00f2fe);">
+            <i class="far fa-clock"></i> ${product.days} Days
+          </span>
+          <span class="badge" style="background: linear-gradient(45deg, #ff6b6b, #feca57);">
+            <i class="fas fa-star"></i> Limited
+          </span>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.1); border-radius: 20px; padding: 15px; margin-bottom: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+              <div style="color: rgba(255,255,255,0.6); font-size: 12px;">Price</div>
+              <div style="color: white; font-size: 24px; font-weight: bold;">₹${product.price}</div>
+            </div>
+            <div>
+              <div style="color: rgba(255,255,255,0.6); font-size: 12px;">Daily Profit</div>
+              <div style="color: #4caf50; font-size: 24px; font-weight: bold;">₹${product.dailyProfit}</div>
+            </div>
+            <div>
+              <div style="color: rgba(255,255,255,0.6); font-size: 12px;">Total Income</div>
+              <div style="color: #ffd700; font-size: 24px; font-weight: bold;">₹${product.totalIncome}</div>
+            </div>
+            <div>
+              <div style="color: rgba(255,255,255,0.6); font-size: 12px;">ROI</div>
+              <div style="color: #4facfe; font-size: 24px; font-weight: bold;">
+                ${((product.totalIncome/product.price)*100).toFixed(0)}%
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="color: rgba(255,255,255,0.8); margin-bottom: 20px;">
+          <h3 style="color: white; margin-bottom: 10px;">Description</h3>
+          <p>Invest in ${product.name} and earn daily profits. Perfect for short-term investment with high returns.</p>
+        </div>
+      `;
+      
+      // Update totals
+      updateTotals();
+    }
+    
+    function loadUserWallet(userId) {
+      firebase.firestore().collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists) {
+            userWallet = doc.data().wallet || 0;
+          }
+        });
+    }
+    
+    function updateQuantity(change) {
+      const input = document.getElementById('quantity');
+      let value = parseInt(input.value) + change;
+      if (value < 1) value = 1;
+      input.value = value;
+      updateTotals();
+    }
+    
+    function updateTotals() {
+      if (!currentProduct) return;
+      
+      const quantity = parseInt(document.getElementById('quantity').value);
+      const totalAmount = currentProduct.price * quantity;
+      const totalDailyProfit = currentProduct.dailyProfit * quantity;
+      const totalIncome = currentProduct.totalIncome * quantity;
+      
+      document.getElementById('totalAmount').textContent = `₹${totalAmount}`;
+      document.getElementById('totalDailyProfit').textContent = `₹${totalDailyProfit}`;
+      document.getElementById('totalIncome').textContent = `₹${totalIncome}`;
+    }
+    
+    function investNow() {
+      const user = firebase.auth().currentUser;
+      if (!user) return;
+      
+      const quantity = parseInt(document.getElementById('quantity').value);
+      const totalAmount = currentProduct.price * quantity;
+      
+      if (userWallet < totalAmount) {
+        alert(`Insufficient balance! You need ₹${totalAmount - userWallet} more.`);
+        if (confirm('Would you like to recharge now?')) {
+          window.location.href = 'recharge.html';
+        }
+        return;
+      }
+      
+      // Process investment
+      const db = firebase.firestore();
+      const investment = {
+        userId: user.uid,
+        productId: productId,
+        productName: currentProduct.name,
+        quantity: quantity,
+        amount: totalAmount,
+        dailyProfit: currentProduct.dailyProfit * quantity,
+        totalIncome: currentProduct.totalIncome * quantity,
+        days: currentProduct.days,
+        startDate: firebase.firestore.FieldValue.serverTimestamp(),
+        endDate: new Date(Date.now() + currentProduct.days * 24 * 60 * 60 * 1000),
+        status: 'active',
+        profitPaid: 0,
+        lastProfitDate: null
+      };
+      
+      db.collection('investments').add(investment)
+        .then(() => {
+          // Deduct from wallet
+          return db.collection('users').doc(user.uid).update({
+            wallet: firebase.firestore.FieldValue.increment(-totalAmount),
+            totalInvestment: firebase.firestore.FieldValue.increment(totalAmount)
+          });
+        })
+        .then(() => {
+          // Create transaction record
+          return db.collection('transactions').add({
+            userId: user.uid,
+            type: 'investment',
+            amount: totalAmount,
+            status: 'completed',
+            description: `Invested in ${currentProduct.name} (${quantity} unit${quantity > 1 ? 's' : ''})`,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        })
+        .then(() => {
+          alert('Investment successful!');
+          window.location.href = 'dashboard.html';
+        })
+        .catch((error) => {
+          alert('Error: ' + error.message);
+        });
+    }
+    
+    function addToCart() {
+      alert('Product added to cart!');
+    }
+  </script>
+</body>
+  </html>
