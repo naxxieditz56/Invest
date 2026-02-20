@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recharge Wallet - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="mobile-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo" onclick="history.back()">
+        <i class="fas fa-arrow-left" style="margin-right: 10px;"></i> Recharge
+      </div>
+      <div class="top-icons">
+        <i class="fas fa-history" onclick="location.href='transactions.html'"></i>
+      </div>
+    </div>
+
+    <!-- Current Balance -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 20px; margin-bottom: 20px;">
+      <div style="color: rgba(255,255,255,0.8); font-size: 14px;">Current Balance</div>
+      <div style="color: white; font-size: 36px; font-weight: bold;" id="currentBalance">₹0</div>
+    </div>
+
+    <!-- Quick Amounts -->
+    <div style="margin-bottom: 20px;">
+      <h3 style="color: white; margin-bottom: 15px;">Quick Amounts</h3>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+        <button onclick="setAmount(500)" class="quick-amount" style="background: rgba(255,255,255,0.15); border: none; border-radius: 15px; padding: 15px 5px; color: white;">₹500</button>
+        <button onclick="setAmount(1000)" class="quick-amount" style="background: rgba(255,255,255,0.15); border: none; border-radius: 15px; padding: 15px 5px; color: white;">₹1000</button>
+        <button onclick="setAmount(2000)" class="quick-amount" style="background: rgba(255,255,255,0.15); border: none; border-radius: 15px; padding: 15px 5px; color: white;">₹2000</button>
+        <button onclick="setAmount(5000)" class="quick-amount" style="background: rgba(255,255,255,0.15); border: none; border-radius: 15px; padding: 15px 5px; color: white;">₹5000</button>
+      </div>
+    </div>
+
+    <!-- Enter Amount -->
+    <div style="margin-bottom: 20px;">
+      <div class="form-group">
+        <label style="color: white;">Enter Amount (₹)</label>
+        <input type="number" id="rechargeAmount" class="form-control" placeholder="Min ₹100" min="100" step="1">
+      </div>
+    </div>
+
+    <!-- Payment Methods -->
+    <div style="margin-bottom: 20px;">
+      <h3 style="color: white; margin-bottom: 15px;">Payment Method</h3>
+      
+      <div class="payment-option" onclick="selectPayment('upi')" style="background: rgba(255,255,255,0.15); border-radius: 15px; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; cursor: pointer;">
+        <i class="fas fa-mobile-alt" style="font-size: 24px; color: #4facfe; margin-right: 15px;"></i>
+        <div style="flex: 1;">
+          <div style="color: white; font-weight: bold;">UPI</div>
+          <div style="color: rgba(255,255,255,0.6); font-size: 12px;">Google Pay, PhonePe, Paytm</div>
+        </div>
+        <div class="radio" id="upiRadio" style="width: 20px; height: 20px; border: 2px solid #4facfe; border-radius: 50%;"></div>
+      </div>
+      
+      <div class="payment-option" onclick="selectPayment('card')" style="background: rgba(255,255,255,0.15); border-radius: 15px; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; cursor: pointer;">
+        <i class="fas fa-credit-card" style="font-size: 24px; color: #ff6b6b; margin-right: 15px;"></i>
+        <div style="flex: 1;">
+          <div style="color: white; font-weight: bold;">Debit/Credit Card</div>
+          <div style="color: rgba(255,255,255,0.6); font-size: 12px;">Visa, Mastercard, RuPay</div>
+        </div>
+        <div class="radio" id="cardRadio" style="width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;"></div>
+      </div>
+      
+      <div class="payment-option" onclick="selectPayment('netbanking')" style="background: rgba(255,255,255,0.15); border-radius: 15px; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; cursor: pointer;">
+        <i class="fas fa-university" style="font-size: 24px; color: #4caf50; margin-right: 15px;"></i>
+        <div style="flex: 1;">
+          <div style="color: white; font-weight: bold;">Net Banking</div>
+          <div style="color: rgba(255,255,255,0.6); font-size: 12px;">All Major Banks</div>
+        </div>
+        <div class="radio" id="netbankingRadio" style="width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;"></div>
+      </div>
+      
+      <div class="payment-option" onclick="selectPayment('crypto')" style="background: rgba(255,255,255,0.15); border-radius: 15px; padding: 15px; display: flex; align-items: center; cursor: pointer;">
+        <i class="fab fa-bitcoin" style="font-size: 24px; color: #f39c12; margin-right: 15px;"></i>
+        <div style="flex: 1;">
+          <div style="color: white; font-weight: bold;">Cryptocurrency</div>
+          <div style="color: rgba(255,255,255,0.6); font-size: 12px;">USDT, BTC, ETH</div>
+        </div>
+        <div class="radio" id="cryptoRadio" style="width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;"></div>
+      </div>
+    </div>
+
+    <!-- Bonus Info -->
+    <div style="background: linear-gradient(45deg, #ff6b6b, #feca57); border-radius: 15px; padding: 15px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center;">
+        <i class="fas fa-gift" style="font-size: 30px; color: white; margin-right: 15px;"></i>
+        <div>
+          <div style="color: white; font-weight: bold;">First Recharge Bonus!</div>
+          <div style="color: rgba(255,255,255,0.9); font-size: 12px;">Get 10% bonus on your first recharge</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Proceed Button -->
+    <button onclick="processRecharge()" class="btn" style="margin-bottom: 20px;">
+      <i class="fas fa-check-circle"></i> Proceed to Pay
+    </button>
+
+    <!-- Recent Recharges -->
+    <div style="background: rgba(255,255,255,0.1); border-radius: 20px; padding: 15px;">
+      <h3 style="color: white; margin-bottom: 15px;">Recent Recharges</h3>
+      <div id="recentRecharges">
+        <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">
+          <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="location.href='dashboard.html'">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" onclick="location.href='products.html'">
+        <i class="fas fa-box"></i>
+        <span>Products</span>
+      </div>
+      <div class="nav-item" onclick="location.href='promotion.html'">
+        <i class="fas fa-bullhorn"></i>
+        <span>Promotion</span>
+      </div>
+      <div class="nav-item" onclick="location.href='profile.html'">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedPayment = 'upi';
+    let currentUser = null;
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        currentUser = user;
+        loadUserData(user.uid);
+        loadRecentRecharges(user.uid);
+      }
+    });
+    
+    function loadUserData(userId) {
+      firebase.firestore().collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists) {
+            document.getElementById('currentBalance').textContent = '₹' + (doc.data().wallet || 0);
+          }
+        });
+    }
+    
+    function loadRecentRecharges(userId) {
+      const db = firebase.firestore();
+      db.collection('recharges')
+        .where('userId', '==', userId)
+        .orderBy('timestamp', 'desc')
+        .limit(5)
+        .get()
+        .then((snapshot) => {
+          const container = document.getElementById('recentRecharges');
+          
+          if (snapshot.empty) {
+            container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">No recharges yet</div>';
+            return;
+          }
+          
+          let html = '';
+          snapshot.forEach((doc) => {
+            const recharge = doc.data();
+            const date = recharge.timestamp ? new Date(recharge.timestamp.toDate()).toLocaleDateString() : 'N/A';
+            html += `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div>
+                  <div style="color: white; font-weight: bold;">₹${recharge.amount}</div>
+                  <div style="color: rgba(255,255,255,0.5); font-size: 11px;">${date}</div>
+                </div>
+                <span class="badge ${recharge.status}">${recharge.status}</span>
+              </div>
+            `;
+          });
+          container.innerHTML = html;
+        });
+    }
+    
+    function setAmount(amount) {
+      document.getElementById('rechargeAmount').value = amount;
+    }
+    
+    function selectPayment(method) {
+      selectedPayment = method;
+      
+      // Reset all radios
+      document.querySelectorAll('.radio').forEach(radio => {
+        radio.style.borderColor = 'rgba(255,255,255,0.3)';
+      });
+      
+      // Highlight selected
+      document.getElementById(method + 'Radio').style.borderColor = '#4facfe';
+    }
+    
+    function processRecharge() {
+      const amount = parseFloat(document.getElementById('rechargeAmount').value);
+      
+      if (!amount || amount < 100) {
+        alert('Please enter a valid amount (minimum ₹100)');
+        return;
+      }
+      
+      if (!selectedPayment) {
+        alert('Please select a payment method');
+        return;
+      }
+      
+      // Create recharge request
+      const db = firebase.firestore();
+      db.collection('recharges').add({
+        userId: currentUser.uid,
+        amount: amount,
+        paymentMethod: selectedPayment,
+        status: 'pending',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert('Recharge request submitted! Please complete the payment.');
+        
+        // For demo, redirect to payment simulation
+        simulatePayment(amount);
+      }).catch((error) => {
+        alert('Error: ' + error.message);
+      });
+    }
+    
+    function simulatePayment(amount) {
+      // This is a simulation - in real app, integrate with payment gateway
+      if (confirm(`Simulate payment of ₹${amount}?\n\nIn real app, this would redirect to payment gateway.`)) {
+        // Simulate successful payment
+        firebase.firestore().collection('users').doc(currentUser.uid).update({
+          wallet: firebase.firestore.FieldValue.increment(amount)
+        }).then(() => {
+          // Update recharge status
+          return firebase.firestore().collection('recharges')
+            .where('userId', '==', currentUser.uid)
+            .orderBy('timestamp', 'desc')
+            .limit(1)
+            .get();
+        }).then((snapshot) => {
+          if (!snapshot.empty) {
+            return snapshot.docs[0].ref.update({
+              status: 'completed'
+            });
+          }
+        }).then(() => {
+          alert('Recharge successful!');
+          location.reload();
+        });
+      }
+    }
+  </script>
+</body>
+            </html>
