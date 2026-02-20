@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Check-In - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="mobile-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo">
+        <i class="fas fa-calendar-check"></i> Daily Check-In
+      </div>
+      <div class="top-icons">
+        <i class="fas fa-question-circle" onclick="showCheckInInfo()"></i>
+      </div>
+    </div>
+
+    <!-- Streak Counter -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 25px; padding: 20px; margin-bottom: 20px; text-align: center;">
+      <i class="fas fa-fire" style="font-size: 40px; color: #ff6b6b; margin-bottom: 10px;"></i>
+      <div style="color: white; font-size: 14px;">Current Streak</div>
+      <div style="color: white; font-size: 48px; font-weight: bold;" id="streakCount">0</div>
+      <div style="color: rgba(255,255,255,0.8); font-size: 12px;">days</div>
+    </div>
+
+    <!-- Today's Check-In Status -->
+    <div style="background: rgba(255,255,255,0.15); border-radius: 20px; padding: 20px; margin-bottom: 20px; text-align: center;">
+      <div id="checkInStatus">
+        <i class="fas fa-clock" style="font-size: 30px; color: #4facfe; margin-bottom: 10px;"></i>
+        <h3 style="color: white; margin-bottom: 10px;">Not Checked In Today</h3>
+        <p style="color: rgba(255,255,255,0.6); margin-bottom: 15px;">Check in now to earn rewards!</p>
+        <button onclick="checkIn()" class="btn" style="max-width: 200px; margin: 0 auto;">
+          <i class="fas fa-check-circle"></i> Check In Now
+        </button>
+      </div>
+    </div>
+
+    <!-- Rewards Calendar -->
+    <div class="checkin-calendar">
+      <div class="calendar-header">
+        <span>February 2026</span>
+        <span>
+          <i class="fas fa-chevron-left" style="margin-right: 15px;"></i>
+          <i class="fas fa-chevron-right"></i>
+        </span>
+      </div>
+      
+      <div class="calendar-grid">
+        <div style="color: rgba(255,255,255,0.6); text-align: center; font-size: 11px;">Mon</div>
+        <div style="color: rgba(255,255,255,0.6); text-align: center; font-size: 11px;">Tue</div>
+        <div style="color: rgba(255,255,255,0.6); text-align: center; font-size: 11px;">Wed</div>
+        <div style="color: rgba(255,255,255,0.6); text-align: center; font-size: 11px;">Thu</div>
+        <div style="color: rgba(255,255,255,0.6); text-align: center; font-size: 11px;">Fri</div>
+        <div style="color: rgba(255,255,255,0.6); text-align: center; font-size: 11px;">Sat</div>
+        <div style="color: rgba(255,255,255,0.6); text-align: center; font-size: 11px;">Sun</div>
+      </div>
+      
+      <div class="calendar-grid" id="calendarDays">
+        <!-- Calendar days will be generated here -->
+      </div>
+    </div>
+
+    <!-- Reward Info -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+      <div style="text-align: center;">
+        <div style="background: linear-gradient(45deg, #4facfe, #00f2fe); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
+          <i class="fas fa-gift" style="color: white;"></i>
+        </div>
+        <div style="color: white; font-size: 12px;">Day 1</div>
+        <div style="color: #ffd700;">₹10</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="background: linear-gradient(45deg, #ff6b6b, #feca57); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
+          <i class="fas fa-gift" style="color: white;"></i>
+        </div>
+        <div style="color: white; font-size: 12px;">Day 7</div>
+        <div style="color: #ffd700;">₹50</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="background: linear-gradient(45deg, #a8e063, #56ab2f); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
+          <i class="fas fa-gift" style="color: white;"></i>
+        </div>
+        <div style="color: white; font-size: 12px;">Day 15</div>
+        <div style="color: #ffd700;">₹100</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="background: linear-gradient(45deg, #9b59b6, #8e44ad); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
+          <i class="fas fa-gift" style="color: white;"></i>
+        </div>
+        <div style="color: white; font-size: 12px;">Day 30</div>
+        <div style="color: #ffd700;">₹500</div>
+      </div>
+    </div>
+
+    <!-- Check-In History -->
+    <div style="background: rgba(255,255,255,0.1); border-radius: 20px; padding: 15px;">
+      <h3 style="color: white; margin-bottom: 15px;">Recent Check-Ins</h3>
+      <div id="checkInHistory">
+        <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">
+          <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="location.href='dashboard.html'">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" onclick="location.href='products.html'">
+        <i class="fas fa-box"></i>
+        <span>Products</span>
+      </div>
+      <div class="nav-item" onclick="location.href='promotion.html'">
+        <i class="fas fa-bullhorn"></i>
+        <span>Promotion</span>
+      </div>
+      <div class="nav-item" onclick="location.href='profile.html'">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let streak = 0;
+    let lastCheckIn = null;
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        currentUser = user;
+        loadCheckInData(user.uid);
+        generateCalendar();
+      }
+    });
+    
+    function loadCheckInData(userId) {
+      const db = firebase.firestore();
+      
+      // Get user's check-in data
+      db.collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists) {
+            streak = doc.data().checkInStreak || 0;
+            document.getElementById('streakCount').textContent = streak;
+          }
+        });
+      
+      // Get check-in history
+      db.collection('checkins')
+        .where('userId', '==', userId)
+        .orderBy('timestamp', 'desc')
+        .limit(10)
+        .get()
+        .then((snapshot) => {
+          const history = document.getElementById('checkInHistory');
+          
+          if (snapshot.empty) {
+            history.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">No check-in history</div>';
+            return;
+          }
+          
+          let html = '';
+          snapshot.forEach((doc) => {
+            const checkin = doc.data();
+            const date = checkin.timestamp ? new Date(checkin.timestamp.toDate()).toLocaleDateString() : 'N/A';
+            html += `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div>
+                  <div style="color: white;">${date}</div>
+                </div>
+                <div style="color: #4caf50;">+₹${checkin.reward || 10}</div>
+              </div>
+            `;
+          });
+          history.innerHTML = html;
+        });
+      
+      // Check if already checked in today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      db.collection('checkins')
+        .where('userId', '==', userId)
+        .where('date', '>=', today)
+        .get()
+        .then((snapshot) => {
+          if (!snapshot.empty) {
+            document.getElementById('checkInStatus').innerHTML = `
+              <i class="fas fa-check-circle" style="font-size: 30px; color: #4caf50; margin-bottom: 10px;"></i>
+              <h3 style="color: white; margin-bottom: 10px;">Already Checked In Today!</h3>
+              <p style="color: rgba(255,255,255,0.6);">Come back tomorrow for more rewards!</p>
+            `;
+          }
+        });
+    }
+    
+    function generateCalendar() {
+      const calendar = document.getElementById('calendarDays');
+      const today = new Date().getDate();
+      const daysInMonth = new Date(2026, 1, 0).getDate(); // February 2026
+      
+      let html = '';
+      for (let i = 1; i <= daysInMonth; i++) {
+        const isToday = i === today;
+        const isChecked = i < today; // Simulate checked days before today
+        
+        html += `
+          <div class="calendar-day ${isChecked ? 'checked' : ''} ${isToday ? 'today' : ''}">
+            ${i}
+          </div>
+        `;
+      }
+      calendar.innerHTML = html;
+    }
+    
+    function checkIn() {
+      const db = firebase.firestore();
+      
+      // Calculate reward based on streak
+      let reward = 10; // Base reward
+      if (streak >= 30) reward = 500;
+      else if (streak >= 15) reward = 100;
+      else if (streak >= 7) reward = 50;
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Create check-in record
+      db.collection('checkins').add({
+        userId: currentUser.uid,
+        date: today,
+        reward: reward,
+        streak: streak + 1,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        // Update user streak and wallet
+        return db.collection('users').doc(currentUser.uid).update({
+          checkInStreak: firebase.firestore.FieldValue.increment(1),
+          wallet: firebase.firestore.FieldValue.increment(reward),
+          lastCheckIn: today
+        });
+      }).then(() => {
+        // Create transaction record
+        return db.collection('transactions').add({
+          userId: currentUser.uid,
+          type: 'checkin_bonus',
+          amount: reward,
+          status: 'completed',
+          description: `Day ${streak + 1} check-in bonus`,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }).then(() => {
+        alert(`Check-in successful! You earned ₹${reward}!`);
+        location.reload();
+      }).catch((error) => {
+        alert('Error: ' + error.message);
+      });
+    }
+    
+    function showCheckInInfo() {
+      alert(
+        'Daily Check-In Rewards:\n\n' +
+        '• Day 1-6: ₹10 daily\n' +
+        '• Day 7: ₹50 bonus\n' +
+        '• Day 15: ₹100 bonus\n' +
+        '• Day 30: ₹500 bonus\n\n' +
+        'Keep your streak going for bigger rewards!'
+      );
+    }
+  </script>
+</body>
+</html>
