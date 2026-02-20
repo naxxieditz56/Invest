@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Management - Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div class="admin-logo">
+        <i class="fas fa-crown"></i> Admin Panel
+      </div>
+      
+      <div class="admin-menu">
+        <a href="index.html" class="menu-item">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"></i> Users
+        </a>
+        <a href="products.html" class="menu-item">
+          <i class="fas fa-box"></i> Products
+        </a>
+        <a href="investments.html" class="menu-item">
+          <i class="fas fa-chart-line"></i> Investments
+        </a>
+        <a href="transactions.html" class="menu-item">
+          <i class="fas fa-exchange-alt"></i> Transactions
+        </a>
+        <a href="referrals.html" class="menu-item">
+          <i class="fas fa-sitemap"></i> Referrals
+        </a>
+        <a href="checkin.html" class="menu-item">
+          <i class="fas fa-calendar-check"></i> Check-In
+        </a>
+        <a href="notifications.html" class="menu-item">
+          <i class="fas fa-bell"></i> Notifications
+        </a>
+        <a href="security.html" class="menu-item active">
+          <i class="fas fa-shield-alt"></i> Security
+        </a>
+        <a href="roles.html" class="menu-item">
+          <i class="fas fa-user-tag"></i> Roles
+        </a>
+      </div>
+      
+      <div class="admin-footer">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span id="adminName">Admin</span>
+        </div>
+        <button onclick="logout()" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+      <div class="admin-header">
+        <h1>Security Management</h1>
+        <div class="header-actions">
+          <span class="security-status" id="securityStatus">
+            <i class="fas fa-shield-alt"></i> System Secure
+          </span>
+        </div>
+      </div>
+
+      <!-- Security Stats -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+        <div style="background: linear-gradient(45deg, #4facfe, #00f2fe); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Active Sessions</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="activeSessions">0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #ff6b6b, #feca57); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Failed Logins (24h)</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="failedLogins">0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #4caf50, #8bc34a); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Blocked IPs</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="blockedIPs">0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #9b59b6, #8e44ad); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">2FA Enabled</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="twoFAEnabled">0</div>
+        </div>
+      </div>
+
+      <!-- Security Tabs -->
+      <div style="background: white; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+        <div style="display: flex; border-bottom: 1px solid #eee;">
+          <button class="tab-btn active" onclick="switchTab('sessions')" style="flex: 1; padding: 15px; background: none; border: none; cursor: pointer;">Active Sessions</button>
+          <button class="tab-btn" onclick="switchTab('login-history')" style="flex: 1; padding: 15px; background: none; border: none; cursor: pointer;">Login History</button>
+          <button class="tab-btn" onclick="switchTab('ip-monitor')" style="flex: 1; padding: 15px; background: none; border: none; cursor: pointer;">IP Monitor</button>
+          <button class="tab-btn" onclick="switchTab('fraud-alerts')" style="flex: 1; padding: 15px; background: none; border: none; cursor: pointer;">Fraud Alerts</button>
+        </div>
+
+        <!-- Active Sessions Tab -->
+        <div id="sessions-tab" class="tab-content" style="padding: 20px;">
+          <h3 style="color: #333; margin-bottom: 15px;">Current Active Sessions</h3>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>IP Address</th>
+                  <th>Location</th>
+                  <th>Device</th>
+                  <th>Login Time</th>
+                  <th>Last Activity</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="sessionsTable">
+                <tr>
+                  <td colspan="7" class="text-center">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Login History Tab -->
+        <div id="login-history-tab" class="tab-content" style="padding: 20px; display: none;">
+          <h3 style="color: #333; margin-bottom: 15px;">Recent Login History</h3>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>IP Address</th>
+                  <th>Location</th>
+                  <th>Device</th>
+                  <th>Status</th>
+                  <th>Time</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="loginHistoryTable">
+                <tr>
+                  <td colspan="7" class="text-center">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- IP Monitor Tab -->
+        <div id="ip-monitor-tab" class="tab-content" style="padding: 20px; display: none;">
+          <h3 style="color: #333; margin-bottom: 15px;">IP Address Monitor</h3>
+          
+          <div style="margin-bottom: 15px;">
+            <input type="text" id="searchIP" class="form-control" placeholder="Search IP address..." style="max-width: 300px;">
+            <button onclick="searchIP()" class="btn-small">Search</button>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>IP Address</th>
+                  <th>Location</th>
+                  <th>Users</th>
+                  <th>Failed Attempts</th>
+                  <th>First Seen</th>
+                  <th>Last Seen</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ipTable">
+                <tr>
+                  <td colspan="8" class="text-center">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Fraud Alerts Tab -->
+        <div id="fraud-alerts-tab" class="tab-content" style="padding: 20px; display: none;">
+          <h3 style="color: #333; margin-bottom: 15px;">Fraud Detection Alerts</h3>
+          
+          <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+            <i class="fas fa-exclamation-triangle"></i> 
+            <strong>Alert:</strong> Multiple failed login attempts detected from 3 IP addresses
+          </div>
+          
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Alert Type</th>
+                  <th>IP Address</th>
+                  <th>User</th>
+                  <th>Description</th>
+                  <th>Severity</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="alertsTable">
+                <tr>
+                  <td>
+                    <span class="badge" style="background: #ff6b6b;">Multiple Failed Logins</span>
+                  </td>
+                  <td>192.168.1.100</td>
+                  <td>john@example.com</td>
+                  <td>10 failed attempts in 5 minutes</td>
+                  <td><span style="color: #f44336;">High</span></td>
+                  <td>2026-02-20 10:30</td>
+                  <td><span class="badge pending">Active</span></td>
+                  <td>
+                    <button class="btn-small" style="background: #4caf50;">✓</button>
+                    <button class="btn-small" style="background: #f44336;">✗</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Settings -->
+      <div style="background: white; border-radius: 10px; padding: 20px;">
+        <h3 style="color: #333; margin-bottom: 15px;">Security Settings</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+          <div>
+            <h4 style="color: #666; margin-bottom: 10px;">Authentication</h4>
+            
+            <div style="margin-bottom: 15px;">
+              <label style="display: flex; align-items: center;">
+                <input type="checkbox" id="enable2FA" checked> 
+                <span style="margin-left: 10px;">Enable Two-Factor Authentication (2FA)</span>
+              </label>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <label>Session Timeout (minutes)</label>
+              <input type="number" id="sessionTimeout" class="form-control" value="30">
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <label>Max Login Attempts</label>
+              <input type="number" id="maxAttempts" class="form-control" value="5">
+            </div>
+          </div>
+          
+          <div>
+            <h4 style="color: #666; margin-bottom: 10px;">IP & Access Control</h4>
+            
+            <div style="margin-bottom: 15px;">
+              <label style="display: flex; align-items: center;">
+                <input type="checkbox" id="enableIPBlocking" checked> 
+                <span style="margin-left: 10px;">Auto-block suspicious IPs</span>
+              </label>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <label>Whitelist IPs (one per line)</label>
+              <textarea id="whitelistIPs" class="form-control" rows="3"></textarea>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <label>Blacklist IPs (one per line)</label>
+              <textarea id="blacklistIPs" class="form-control" rows="3"></textarea>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+          <button onclick="saveSecuritySettings()" class="btn">Save Security Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session Details Modal -->
+  <div id="sessionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Session Details</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      
+      <div id="sessionDetails">
+        <!-- Session details will be loaded here -->
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button onclick="terminateSession()" class="btn" style="background: #f44336;">Terminate Session</button>
+        <button onclick="blockIP()" class="btn" style="background: #ff9800;">Block IP</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        checkAdminStatus(user.uid);
+      }
+    });
+    
+    function checkAdminStatus(userId) {
+      firebase.firestore().collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists && doc.data().role === 'admin') {
+            document.getElementById('adminName').textContent = doc.data().username || 'Admin';
+            loadSecurityData();
+            loadSessions();
+            loadLoginHistory();
+            loadIPData();
+          } else {
+            window.location.href = '../dashboard.html';
+          }
+        });
+    }
+    
+    function loadSecurityData() {
+      // Simulate loading security data
+      document.getElementById('activeSessions').textContent = '24';
+      document.getElementById('failedLogins').textContent = '8';
+      document.getElementById('blockedIPs').textContent = '3';
+      document.getElementById('twoFAEnabled').textContent = '156';
+    }
+    
+    function loadSessions() {
+      const tbody = document.getElementById('sessionsTable');
+      
+      // Simulate session data
+      const sessions = [
+        { user: 'john@example.com', ip: '192.168.1.100', location: 'Mumbai, IN', device: 'Chrome / Windows', login: '10:30 AM', activity: '2 min ago' },
+        { user: 'jane@example.com', ip: '192.168.1.101', location: 'Delhi, IN', device: 'Safari / macOS', login: '09:15 AM', activity: '5 min ago' },
+        { user: 'bob@example.com', ip: '192.168.1.102', location: 'Bangalore, IN', device: 'Firefox / Linux', login: '08:45 AM', activity: '15 min ago' },
+      ];
+      
+      tbody.innerHTML = '';
+      sessions.forEach(session => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${session.user}</td>
+            <td>${session.ip}</td>
+            <td>${session.location}</td>
+            <td>${session.device}</td>
+            <td>${session.login}</td>
+            <td>${session.activity}</td>
+            <td>
+              <button onclick="viewSession('${session.ip}')" class="btn-small">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button onclick="terminateUserSession('${session.ip}')" class="btn-small" style="background: #f44336;">
+                <i class="fas fa-ban"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    
+    function loadLoginHistory() {
+      const tbody = document.getElementById('loginHistoryTable');
+      
+      // Simulate login history
+      const history = [
+        { user: 'john@example.com', ip: '192.168.1.100', location: 'Mumbai, IN', device: 'Chrome / Windows', status: 'success', time: '10:30 AM' },
+        { user: 'jane@example.com', ip: '192.168.1.101', location: 'Delhi, IN', device: 'Safari / macOS', status: 'success', time: '09:15 AM' },
+        { user: 'unknown', ip: '203.45.67.89', location: 'Beijing, CN', device: 'Unknown', status: 'failed', time: '08:20 AM' },
+      ];
+      
+      tbody.innerHTML = '';
+      history.forEach(item => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.user}</td>
+            <td>${item.ip}</td>
+            <td>${item.location}</td>
+            <td>${item.device}</td>
+            <td><span class="badge ${item.status === 'success' ? 'success' : 'rejected'}">${item.status}</span></td>
+            <td>${item.time}</td>
+            <td>
+              <button onclick="blockIPAddress('${item.ip}')" class="btn-small" style="background: #ff9800;">
+                <i class="fas fa-ban"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    
+    function loadIPData() {
+      const tbody = document.getElementById('ipTable');
+      
+      // Simulate IP data
+      const ips = [
+        { ip: '192.168.1.100', location: 'Mumbai, IN', users: 2, failed: 0, first: '2026-01-15', last: '2026-02-20', status: 'allowed' },
+        { ip: '203.45.67.89', location: 'Beijing, CN', users: 1, failed: 8, first: '2026-02-19', last: '2026-02-20', status: 'blocked' },
+        { ip: '78.89.12.34', location: 'Moscow, RU', users: 1, failed: 5, first: '2026-02-18', last: '2026-02-20', status: 'monitoring' },
+      ];
+      
+      tbody.innerHTML = '';
+      ips.forEach(ip => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${ip.ip}</td>
+            <td>${ip.location}</td>
+            <td>${ip.users}</td>
+            <td>${ip.failed}</td>
+            <td>${ip.first}</td>
+            <td>${ip.last}</td>
+            <td><span class="badge ${ip.status === 'allowed' ? 'success' : ip.status === 'blocked' ? 'rejected' : 'pending'}">${ip.status}</span></td>
+            <td>
+              <button onclick="toggleIPStatus('${ip.ip}')" class="btn-small">
+                <i class="fas ${ip.status === 'blocked' ? 'fa-check' : 'fa-ban'}"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    
+    function switchTab(tab) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      
+      // Show selected tab
+      document.getElementById(tab + '-tab').style.display = 'block';
+      event.target.classList.add('active');
+    }
+    
+    function viewSession(ip) {
+      document.getElementById('sessionDetails').innerHTML = `
+        <div><strong>IP Address:</strong> ${ip}</div>
+        <div><strong>Location:</strong> Mumbai, India</div>
+        <div><strong>ISP:</strong> Reliance Jio</div>
+        <div><strong>Device:</strong> Chrome 98 / Windows 11</div>
+        <div><strong>Login Time:</strong> 2026-02-20 10:30:45</div>
+        <div><strong>Last Activity:</strong> 2 minutes ago</div>
+        <div><strong>Pages Visited:</strong> Dashboard, Products, Profile</div>
+      `;
+      document.getElementById('sessionModal').classList.add('active');
+    }
+    
+    function closeModal() {
+      document.getElementById('sessionModal').classList.remove('active');
+    }
+    
+    function terminateSession() {
+      if (confirm('Terminate this session?')) {
+        alert('Session terminated');
+        closeModal();
+      }
+    }
+    
+    function blockIP() {
+      if (confirm('Block this IP address?')) {
+        alert('IP blocked');
+        closeModal();
+      }
+    }
+    
+    function terminateUserSession(ip) {
+      if (confirm(`Terminate session for IP ${ip}?`)) {
+        alert('Session terminated');
+      }
+    }
+    
+    function blockIPAddress(ip) {
+      if (confirm(`Block IP address ${ip}?`)) {
+        alert('IP blocked');
+      }
+    }
+    
+    function toggleIPStatus(ip) {
+      if (confirm(`Toggle block status for IP ${ip}?`)) {
+        alert('IP status updated');
+      }
+    }
+    
+    function searchIP() {
+      const ip = document.getElementById('searchIP').value;
+      if (ip) {
+        alert(`Searching for IP: ${ip}`);
+      }
+    }
+    
+    function saveSecuritySettings() {
+      alert('Security settings saved!');
+    }
+    
+    function logout() {
+      firebase.auth().signOut()
+        .then(() => {
+          window.location.href = 'login.html';
+        });
+    }
+  </script>
+</body>
+  </html>
