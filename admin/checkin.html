@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check-In Management - Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div class="admin-logo">
+        <i class="fas fa-crown"></i> Admin Panel
+      </div>
+      
+      <div class="admin-menu">
+        <a href="index.html" class="menu-item">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"></i> Users
+        </a>
+        <a href="products.html" class="menu-item">
+          <i class="fas fa-box"></i> Products
+        </a>
+        <a href="investments.html" class="menu-item">
+          <i class="fas fa-chart-line"></i> Investments
+        </a>
+        <a href="transactions.html" class="menu-item">
+          <i class="fas fa-exchange-alt"></i> Transactions
+        </a>
+        <a href="referrals.html" class="menu-item">
+          <i class="fas fa-sitemap"></i> Referrals
+        </a>
+        <a href="checkin.html" class="menu-item active">
+          <i class="fas fa-calendar-check"></i> Check-In
+        </a>
+        <a href="notifications.html" class="menu-item">
+          <i class="fas fa-bell"></i> Notifications
+        </a>
+        <a href="security.html" class="menu-item">
+          <i class="fas fa-shield-alt"></i> Security
+        </a>
+        <a href="roles.html" class="menu-item">
+          <i class="fas fa-user-tag"></i> Roles
+        </a>
+      </div>
+      
+      <div class="admin-footer">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span id="adminName">Admin</span>
+        </div>
+        <button onclick="logout()" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+      <div class="admin-header">
+        <h1>Daily Check-In Management</h1>
+        <div class="header-actions">
+          <button class="btn" onclick="showSettingsModal()">
+            <i class="fas fa-cog"></i> Configure Rewards
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+        <div style="background: linear-gradient(45deg, #4facfe, #00f2fe); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Today's Check-Ins</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="todayCheckins">0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #4caf50, #8bc34a); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Total Check-Ins</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="totalCheckins">0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #ff9800, #f57c00); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Total Rewards Paid</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="totalRewards">₹0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #9b59b6, #8e44ad); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Active Streak Users</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="streakUsers">0</div>
+        </div>
+      </div>
+
+      <!-- Reward Configuration -->
+      <div style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #333; margin-bottom: 15px;">Current Reward Structure</h3>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+          <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+            <div style="font-size: 14px; color: #666;">Daily Base</div>
+            <div style="font-size: 24px; font-weight: bold; color: #4facfe;" id="baseReward">₹10</div>
+          </div>
+          <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+            <div style="font-size: 14px; color: #666;">7-Day Bonus</div>
+            <div style="font-size: 24px; font-weight: bold; color: #ff6b6b;" id="week7Bonus">₹50</div>
+          </div>
+          <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+            <div style="font-size: 14px; color: #666;">15-Day Bonus</div>
+            <div style="font-size: 24px; font-weight: bold; color: #4caf50;" id="day15Bonus">₹100</div>
+          </div>
+          <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+            <div style="font-size: 14px; color: #666;">30-Day Bonus</div>
+            <div style="font-size: 24px; font-weight: bold; color: #9b59b6;" id="day30Bonus">₹500</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today's Check-Ins -->
+      <div style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #333; margin-bottom: 15px;">Today's Check-Ins</h3>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Streak</th>
+                <th>Reward</th>
+                <th>Time</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="todayCheckinsTable">
+              <tr>
+                <td colspan="5" class="text-center">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Check-In Statistics -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <!-- Streak Distribution -->
+        <div style="background: white; border-radius: 10px; padding: 20px;">
+          <h3 style="color: #333; margin-bottom: 15px;">Streak Distribution</h3>
+          <canvas id="streakChart" style="height: 300px;"></canvas>
+        </div>
+        
+        <!-- Monthly Activity -->
+        <div style="background: white; border-radius: 10px; padding: 20px;">
+          <h3 style="color: #333; margin-bottom: 15px;">Monthly Check-In Activity</h3>
+          <canvas id="monthlyChart" style="height: 300px;"></canvas>
+        </div>
+      </div>
+
+      <!-- Check-In History -->
+      <div style="background: white; border-radius: 10px; padding: 20px;">
+        <h3 style="color: #333; margin-bottom: 15px;">Recent Check-In History</h3>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>User</th>
+                <th>Streak</th>
+                <th>Reward</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="historyTable">
+              <tr>
+                <td colspan="5" class="text-center">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Check-In Reward Settings</h2>
+        <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
+      </div>
+      
+      <form onsubmit="event.preventDefault(); saveSettings();">
+        <div class="form-group">
+          <label>Enable Check-In Feature</label>
+          <select id="enableCheckin" class="form-control">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Base Daily Reward (₹)</label>
+          <input type="number" id="baseRewardInput" class="form-control" step="1" min="0" required>
+        </div>
+        
+        <h4 style="color: #333; margin: 15px 0 10px;">Bonus Milestones</h4>
+        
+        <div class="form-group">
+          <label>7-Day Streak Bonus (₹)</label>
+          <input type="number" id="week7Input" class="form-control" step="1" min="0" required>
+        </div>
+        
+        <div class="form-group">
+          <label>15-Day Streak Bonus (₹)</label>
+          <input type="number" id="day15Input" class="form-control" step="1" min="0" required>
+        </div>
+        
+        <div class="form-group">
+          <label>30-Day Streak Bonus (₹)</label>
+          <input type="number" id="day30Input" class="form-control" step="1" min="0" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Allow Check-In Reset</label>
+          <select id="allowReset" class="form-control">
+            <option value="true">Yes (reset on missed day)</option>
+            <option value="false">No (keep streak)</option>
+          </select>
+        </div>
+        
+        <button type="submit" class="btn">Save Settings</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let streakChart, monthlyChart;
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        checkAdminStatus(user.uid);
+      }
+    });
+    
+    function checkAdminStatus(userId) {
+      firebase.firestore().collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists && doc.data().role === 'admin') {
+            document.getElementById('adminName').textContent = doc.data().username || 'Admin';
+            loadCheckinData();
+            loadSettings();
+            initCharts();
+          } else {
+            window.location.href = '../dashboard.html';
+          }
+        });
+    }
+    
+    function loadCheckinData() {
+      const db = firebase.firestore();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Get today's check-ins
+      db.collection('checkins')
+        .where('date', '>=', today)
+        .orderBy('date', 'desc')
+        .get()
+        .then(async (snapshot) => {
+          document.getElementById('todayCheckins').textContent = snapshot.size;
+          
+          const tbody = document.getElementById('todayCheckinsTable');
+          tbody.innerHTML = '';
+          
+          if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No check-ins today</td></tr>';
+          } else {
+            for (const doc of snapshot.docs) {
+              const checkin = doc.data();
+              
+              // Get user details
+              let userName = 'Unknown';
+              if (checkin.userId) {
+                const userDoc = await db.collection('users').doc(checkin.userId).get();
+                if (userDoc.exists) {
+                  userName = userDoc.data().username || userDoc.data().email || 'Unknown';
+                }
+              }
+              
+              const time = checkin.timestamp ? new Date(checkin.timestamp.toDate()).toLocaleTimeString() : 'N/A';
+              
+              tbody.innerHTML += `
+                <tr>
+                  <td>${userName}</td>
+                  <td>${checkin.streak || 0} days</td>
+                  <td>₹${checkin.reward || 0}</td>
+                  <td>${time}</td>
+                  <td>
+                    <button onclick="viewUser('${checkin.userId}')" class="btn-small">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+              `;
+            }
+          }
+        });
+      
+      // Get total check-ins
+      db.collection('checkins').get()
+        .then((snapshot) => {
+          document.getElementById('totalCheckins').textContent = snapshot.size;
+          
+          // Calculate total rewards
+          let total = 0;
+          snapshot.forEach((doc) => {
+            total += doc.data().reward || 0;
+          });
+          document.getElementById('totalRewards').textContent = '₹' + total;
+        });
+      
+      // Count users with active streaks
+      db.collection('users').where('checkInStreak', '>', 0).get()
+        .then((snapshot) => {
+          document.getElementById('streakUsers').textContent = snapshot.size;
+        });
+      
+      // Load history
+      db.collection('checkins')
+        .orderBy('timestamp', 'desc')
+        .limit(50)
+        .get()
+        .then(async (snapshot) => {
+          const tbody = document.getElementById('historyTable');
+          tbody.innerHTML = '';
+          
+          for (const doc of snapshot.docs) {
+            const checkin = doc.data();
+            
+            // Get user details
+            let userName = 'Unknown';
+            if (checkin.userId) {
+              const userDoc = await db.collection('users').doc(checkin.userId).get();
+              if (userDoc.exists) {
+                userName = userDoc.data().username || userDoc.data().email || 'Unknown';
+              }
+            }
+            
+            const date = checkin.date ? new Date(checkin.date.toDate()).toLocaleDateString() : 'N/A';
+            
+            tbody.innerHTML += `
+              <tr>
+                <td>${date}</td>
+                <td>${userName}</td>
+                <td>${checkin.streak || 0} days</td>
+                <td>₹${checkin.reward || 0}</td>
+                <td><span class="badge success">Completed</span></td>
+              </tr>
+            `;
+          }
+        });
+    }
+    
+    function loadSettings() {
+      const db = firebase.firestore();
+      
+      db.collection('settings').doc('checkin').get()
+        .then((doc) => {
+          if (doc.exists) {
+            const settings = doc.data();
+            document.getElementById('baseReward').textContent = '₹' + (settings.baseReward || 10);
+            document.getElementById('week7Bonus').textContent = '₹' + (settings.week7Bonus || 50);
+            document.getElementById('day15Bonus').textContent = '₹' + (settings.day15Bonus || 100);
+            document.getElementById('day30Bonus').textContent = '₹' + (settings.day30Bonus || 500);
+          }
+        });
+    }
+    
+    function initCharts() {
+      // Streak Distribution Chart
+      const ctx = document.getElementById('streakChart').getContext('2d');
+      streakChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['1-7 days', '8-14 days', '15-29 days', '30+ days'],
+          datasets: [{
+            data: [45, 25, 15, 10],
+            backgroundColor: ['#4facfe', '#ff6b6b', '#4caf50', '#9b59b6']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+      
+      // Monthly Activity Chart
+      const ctx2 = document.getElementById('monthlyChart').getContext('2d');
+      monthlyChart = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+          datasets: [{
+            label: 'Check-Ins',
+            data: [65, 72, 68, 81],
+            borderColor: '#4facfe',
+            backgroundColor: 'rgba(79, 172, 254, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+    
+    function showSettingsModal() {
+      const db = firebase.firestore();
+      
+      db.collection('settings').doc('checkin').get()
+        .then((doc) => {
+          if (doc.exists) {
+            const settings = doc.data();
+            document.getElementById('enableCheckin').value = settings.enabled ? 'true' : 'false';
+            document.getElementById('baseRewardInput').value = settings.baseReward || 10;
+            document.getElementById('week7Input').value = settings.week7Bonus || 50;
+            document.getElementById('day15Input').value = settings.day15Bonus || 100;
+            document.getElementById('day30Input').value = settings.day30Bonus || 500;
+            document.getElementById('allowReset').value = settings.allowReset ? 'true' : 'false';
+          } else {
+            document.getElementById('enableCheckin').value = 'true';
+            document.getElementById('baseRewardInput').value = 10;
+            document.getElementById('week7Input').value = 50;
+            document.getElementById('day15Input').value = 100;
+            document.getElementById('day30Input').value = 500;
+            document.getElementById('allowReset').value = 'true';
+          }
+        });
+      
+      document.getElementById('settingsModal').classList.add('active');
+    }
+    
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.remove('active');
+    }
+    
+    function saveSettings() {
+      const settings = {
+        enabled: document.getElementById('enableCheckin').value === 'true',
+        baseReward: parseFloat(document.getElementById('baseRewardInput').value),
+        week7Bonus: parseFloat(document.getElementById('week7Input').value),
+        day15Bonus: parseFloat(document.getElementById('day15Input').value),
+        day30Bonus: parseFloat(document.getElementById('day30Input').value),
+        allowReset: document.getElementById('allowReset').value === 'true',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      
+      const db = firebase.firestore();
+      db.collection('settings').doc('checkin').set(settings, { merge: true })
+        .then(() => {
+          alert('Settings saved successfully!');
+          closeSettingsModal();
+          loadSettings();
+        })
+        .catch((error) => {
+          alert('Error: ' + error.message);
+        });
+    }
+    
+    function viewUser(userId) {
+      if (userId) {
+        window.location.href = `users.html?view=${userId}`;
+      }
+    }
+    
+    function logout() {
+      firebase.auth().signOut()
+        .then(() => {
+          window.location.href = 'login.html';
+        });
+    }
+  </script>
+</body>
+                                                                     </html>
