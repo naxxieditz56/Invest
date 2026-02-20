@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Role Management - Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div class="admin-logo">
+        <i class="fas fa-crown"></i> Admin Panel
+      </div>
+      
+      <div class="admin-menu">
+        <a href="index.html" class="menu-item">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"></i> Users
+        </a>
+        <a href="products.html" class="menu-item">
+          <i class="fas fa-box"></i> Products
+        </a>
+        <a href="investments.html" class="menu-item">
+          <i class="fas fa-chart-line"></i> Investments
+        </a>
+        <a href="transactions.html" class="menu-item">
+          <i class="fas fa-exchange-alt"></i> Transactions
+        </a>
+        <a href="referrals.html" class="menu-item">
+          <i class="fas fa-sitemap"></i> Referrals
+        </a>
+        <a href="checkin.html" class="menu-item">
+          <i class="fas fa-calendar-check"></i> Check-In
+        </a>
+        <a href="notifications.html" class="menu-item">
+          <i class="fas fa-bell"></i> Notifications
+        </a>
+        <a href="security.html" class="menu-item">
+          <i class="fas fa-shield-alt"></i> Security
+        </a>
+        <a href="roles.html" class="menu-item active">
+          <i class="fas fa-user-tag"></i> Roles
+        </a>
+      </div>
+      
+      <div class="admin-footer">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span id="adminName">Admin</span>
+        </div>
+        <button onclick="logout()" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+      <div class="admin-header">
+        <h1>Role & Permission Management</h1>
+        <div class="header-actions">
+          <button class="btn" onclick="showAddRoleModal()">
+            <i class="fas fa-plus"></i> Create New Role
+          </button>
+        </div>
+      </div>
+
+      <!-- Role Cards -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px;">
+        <!-- Super Admin Role -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; padding: 20px; color: white;">
+          <i class="fas fa-crown" style="font-size: 30px; margin-bottom: 10px;"></i>
+          <h3 style="margin-bottom: 5px;">Super Admin</h3>
+          <p style="font-size: 12px; opacity: 0.8; margin-bottom: 15px;">Full system access</p>
+          <div style="font-size: 12px;">
+            <div><i class="fas fa-check"></i> All permissions</div>
+            <div><i class="fas fa-check"></i> User management</div>
+            <div><i class="fas fa-check"></i> System settings</div>
+          </div>
+          <div style="margin-top: 15px;">
+            <span class="badge" style="background: rgba(255,255,255,0.2);">2 users</span>
+          </div>
+        </div>
+
+        <!-- Finance Admin -->
+        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 10px; padding: 20px; color: white;">
+          <i class="fas fa-chart-line" style="font-size: 30px; margin-bottom: 10px;"></i>
+          <h3 style="margin-bottom: 5px;">Finance Admin</h3>
+          <p style="font-size: 12px; opacity: 0.8; margin-bottom: 15px;">Financial operations</p>
+          <div style="font-size: 12px;">
+            <div><i class="fas fa-check"></i> View transactions</div>
+            <div><i class="fas fa-check"></i> Approve withdrawals</div>
+            <div><i class="fas fa-check"></i> Investment reports</div>
+          </div>
+          <div style="margin-top: 15px;">
+            <span class="badge" style="background: rgba(255,255,255,0.2);">3 users</span>
+          </div>
+        </div>
+
+        <!-- Support Admin -->
+        <div style="background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%); border-radius: 10px; padding: 20px; color: white;">
+          <i class="fas fa-headset" style="font-size: 30px; margin-bottom: 10px;"></i>
+          <h3 style="margin-bottom: 5px;">Support Admin</h3>
+          <p style="font-size: 12px; opacity: 0.8; margin-bottom: 15px;">User support</p>
+          <div style="font-size: 12px;">
+            <div><i class="fas fa-check"></i> View users</div>
+            <div><i class="fas fa-check"></i> Handle queries</div>
+            <div><i class="fas fa-check"></i> Send notifications</div>
+          </div>
+          <div style="margin-top: 15px;">
+            <span class="badge" style="background: rgba(255,255,255,0.2);">4 users</span>
+          </div>
+        </div>
+
+        <!-- Product Manager -->
+        <div style="background: linear-gradient(135deg, #4caf50 0%, #8bc34a 100%); border-radius: 10px; padding: 20px; color: white;">
+          <i class="fas fa-box" style="font-size: 30px; margin-bottom: 10px;"></i>
+          <h3 style="margin-bottom: 5px;">Product Manager</h3>
+          <p style="font-size: 12px; opacity: 0.8; margin-bottom: 15px;">Product management</p>
+          <div style="font-size: 12px;">
+            <div><i class="fas fa-check"></i> Add/edit products</div>
+            <div><i class="fas fa-check"></i> Update pricing</div>
+            <div><i class="fas fa-check"></i> Product images</div>
+          </div>
+          <div style="margin-top: 15px;">
+            <span class="badge" style="background: rgba(255,255,255,0.2);">2 users</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Role Management Table -->
+      <div style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #333; margin-bottom: 15px;">Admin Users & Roles</h3>
+        
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Permissions</th>
+                <th>Last Active</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTable">
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center;">
+                    <i class="fas fa-user-circle" style="font-size: 30px; color: #667eea; margin-right: 10px;"></i>
+                    <div>
+                      <div>Super Admin</div>
+                      <small style="color: #999;">ID: admin1</small>
+                    </div>
+                  </div>
+                </td>
+                <td>admin@cadbury.com</td>
+                <td><span class="badge" style="background: #667eea;">Super Admin</span></td>
+                <td>Full Access</td>
+                <td>2 min ago</td>
+                <td><span class="badge success">Active</span></td>
+                <td>
+                  <button onclick="editAdminRole('admin1')" class="btn-small">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button onclick="toggleAdminStatus('admin1')" class="btn-small">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center;">
+                    <i class="fas fa-user-circle" style="font-size: 30px; color: #4facfe; margin-right: 10px;"></i>
+                    <div>
+                      <div>Finance Manager</div>
+                      <small style="color: #999;">ID: finance1</small>
+                    </div>
+                  </div>
+                </td>
+                <td>finance@cadbury.com</td>
+                <td><span class="badge" style="background: #4facfe;">Finance Admin</span></td>
+                <td>Finance Operations</td>
+                <td>15 min ago</td>
+                <td><span class="badge success">Active</span></td>
+                <td>
+                  <button onclick="editAdminRole('finance1')" class="btn-small">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button onclick="toggleAdminStatus('finance1')" class="btn-small">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Permission Matrix -->
+      <div style="background: white; border-radius: 10px; padding: 20px;">
+        <h3 style="color: #333; margin-bottom: 15px;">Permission Matrix</h3>
+        
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Permission</th>
+                <th>Super Admin</th>
+                <th>Finance Admin</th>
+                <th>Support Admin</th>
+                <th>Product Manager</th>
+                <th>Viewer</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>View Dashboard</td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+              </tr>
+              <tr>
+                <td>User Management</td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+              </tr>
+              <tr>
+                <td>Product Management</td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+              </tr>
+              <tr>
+                <td>Transaction Approval</td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+              </tr>
+              <tr>
+                <td>Withdrawal Processing</td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+              </tr>
+              <tr>
+                <td>Send Notifications</td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+              </tr>
+              <tr>
+                <td>System Settings</td>
+                <td><i class="fas fa-check" style="color: #4caf50;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+                <td><i class="fas fa-times" style="color: #f44336;"></i></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Role Modal -->
+  <div id="roleModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Create New Role</h2>
+        <button class="close-btn" onclick="closeRoleModal()">&times;</button>
+      </div>
+      
+      <form onsubmit="event.preventDefault(); saveRole();">
+        <div class="form-group">
+          <label>Role Name</label>
+          <input type="text" id="roleName" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="roleDescription" class="form-control" rows="2"></textarea>
+        </div>
+        
+        <h4 style="color: #333; margin: 15px 0 10px;">Permissions</h4>
+        
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+          <label style="display: flex; align-items: center;">
+            <input type="checkbox" id="permDashboard" checked> 
+            <span style="margin-left: 8px;">View Dashboard</span>
+          </label>
+          <label style="display: flex; align-items: center;">
+            <input type="checkbox" id="permUsers"> 
+            <span style="margin-left: 8px;">User Management</span>
+          </label>
+          <label style="display: flex; align-items: center;">
+            <input type="checkbox" id="permProducts"> 
+            <span style="margin-left: 8px;">Product Management</span>
+          </label>
+          <label style="display: flex; align-items: center;">
+            <input type="checkbox" id="permInvestments"> 
+            <span style="margin-left: 8px;">Investment Management</span>
+          </label>
+          <label style="display: flex; align-items: center;">
+            <input type="checkbox" id="permTransactions"> 
+            <span style="margin-left: 8px;">Transaction Approval</span>
+          </label>
+          <label style="display: flex; align-items: center;">
+            <input type="checkbox" id="permWithdrawals"> 
+            <span style="margin-left: 8px;">Withdrawal Processing</span>
+          </label>
+          <label style="display: flex; align-items: center;">
+            <input type="checkbox" id="permNotifications"> 
+            <span style="margin-left: 8px;">Send Notifications</span>
+          </label>
+          <label style="display: flex; align-items: center;">
+            <input type="checkbox" id="permSettings"> 
+            <span style="margin-left: 8px;">System Settings</span>
+          </label>
+        </div>
+        
+        <button type="submit" class="btn" style="margin-top: 20px;">Create Role</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        checkAdminStatus(user.uid);
+      }
+    });
+    
+    function checkAdminStatus(userId) {
+      firebase.firestore().collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists && (doc.data().role === 'admin' || doc.data().role === 'super_admin')) {
+            document.getElementById('adminName').textContent = doc.data().username || 'Admin';
+          } else {
+            window.location.href = '../dashboard.html';
+          }
+        });
+    }
+    
+    function showAddRoleModal() {
+      document.getElementById('roleModal').classList.add('active');
+    }
+    
+    function closeRoleModal() {
+      document.getElementById('roleModal').classList.remove('active');
+    }
+    
+    function saveRole() {
+      const roleName = document.getElementById('roleName').value;
+      const description = document.getElementById('roleDescription').value;
+      
+      // Collect permissions
+      const permissions = {
+        dashboard: document.getElementById('permDashboard').checked,
+        users: document.getElementById('permUsers').checked,
+        products: document.getElementById('permProducts').checked,
+        investments: document.getElementById('permInvestments').checked,
+        transactions: document.getElementById('permTransactions').checked,
+        withdrawals: document.getElementById('permWithdrawals').checked,
+        notifications: document.getElementById('permNotifications').checked,
+        settings: document.getElementById('permSettings').checked
+      };
+      
+      alert(`Role "${roleName}" created successfully!`);
+      closeRoleModal();
+    }
+    
+    function editAdminRole(adminId) {
+      alert(`Edit role for admin: ${adminId}`);
+    }
+    
+    function toggleAdminStatus(adminId) {
+      if (confirm(`Toggle status for admin ${adminId}?`)) {
+        alert('Admin status updated');
+      }
+    }
+    
+    function logout() {
+      firebase.auth().signOut()
+        .then(() => {
+          window.location.href = 'login.html';
+        });
+    }
+  </script>
+</body>
+                                           </html>
