@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investment Management - Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div class="admin-logo">
+        <i class="fas fa-crown"></i> Admin Panel
+      </div>
+      
+      <div class="admin-menu">
+        <a href="index.html" class="menu-item">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"></i> Users
+        </a>
+        <a href="products.html" class="menu-item">
+          <i class="fas fa-box"></i> Products
+        </a>
+        <a href="investments.html" class="menu-item active">
+          <i class="fas fa-chart-line"></i> Investments
+        </a>
+        <a href="transactions.html" class="menu-item">
+          <i class="fas fa-exchange-alt"></i> Transactions
+        </a>
+        <a href="referrals.html" class="menu-item">
+          <i class="fas fa-sitemap"></i> Referrals
+        </a>
+        <a href="checkin.html" class="menu-item">
+          <i class="fas fa-calendar-check"></i> Check-In
+        </a>
+        <a href="notifications.html" class="menu-item">
+          <i class="fas fa-bell"></i> Notifications
+        </a>
+        <a href="security.html" class="menu-item">
+          <i class="fas fa-shield-alt"></i> Security
+        </a>
+        <a href="roles.html" class="menu-item">
+          <i class="fas fa-user-tag"></i> Roles
+        </a>
+      </div>
+      
+      <div class="admin-footer">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span id="adminName">Admin</span>
+        </div>
+        <button onclick="logout()" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+      <div class="admin-header">
+        <h1>Investment Management</h1>
+        <div class="header-actions">
+          <button class="btn" onclick="showAddInvestmentModal()">
+            <i class="fas fa-plus"></i> Manual Investment
+          </button>
+          <button class="btn btn-secondary" onclick="processDailyProfits()">
+            <i class="fas fa-coins"></i> Process Profits
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <select id="statusFilter" class="form-control" style="max-width: 150px;">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+          <option value="pending">Pending</option>
+        </select>
+        <select id="productFilter" class="form-control" style="max-width: 150px;">
+          <option value="all">All Products</option>
+        </select>
+        <input type="text" id="searchUser" class="form-control" placeholder="Search by user..." style="flex: 1;">
+      </div>
+
+      <!-- Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+        <div style="background: linear-gradient(45deg, #4facfe, #00f2fe); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Total Investments</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="totalInvestments">0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #ff6b6b, #feca57); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Active Investments</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="activeInvestments">0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #a8e063, #56ab2f); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Total Amount</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="totalAmount">₹0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #9b59b6, #8e44ad); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Total Profits Paid</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="totalProfits">₹0</div>
+        </div>
+      </div>
+
+      <!-- Investments Table -->
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Product</th>
+              <th>Amount</th>
+              <th>Daily Profit</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Status</th>
+              <th>Profits Paid</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="investmentsTable">
+            <tr>
+              <td colspan="9" class="text-center">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" style="margin-top: 20px; text-align: center;">
+        <button class="btn-small" onclick="prevPage()"><i class="fas fa-chevron-left"></i></button>
+        <span id="pageInfo" style="margin: 0 15px; color: white;">Page 1</span>
+        <button class="btn-small" onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Investment Modal -->
+  <div id="addInvestmentModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Manual Investment</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      
+      <form onsubmit="event.preventDefault(); addManualInvestment();">
+        <div class="form-group">
+          <label>Select User</label>
+          <select id="userSelect" class="form-control" required>
+            <option value="">Choose user...</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Select Product</label>
+          <select id="productSelect" class="form-control" required>
+            <option value="">Choose product...</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="quantity" class="form-control" value="1" min="1" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" id="startDate" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Status</label>
+          <select id="investmentStatus" class="form-control">
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        
+        <button type="submit" class="btn">Add Investment</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let currentPage = 1;
+    const itemsPerPage = 20;
+    let lastVisible = null;
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        checkAdminStatus(user.uid);
+      }
+    });
+    
+    function checkAdminStatus(userId) {
+      firebase.firestore().collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists && doc.data().role === 'admin') {
+            document.getElementById('adminName').textContent = doc.data().username || 'Admin';
+            loadInvestments();
+            loadSummary();
+            loadDropdowns();
+          } else {
+            window.location.href = '../dashboard.html';
+          }
+        });
+    }
+    
+    function loadSummary() {
+      const db = firebase.firestore();
+      
+      db.collection('investments').get()
+        .then((snapshot) => {
+          document.getElementById('totalInvestments').textContent = snapshot.size;
+          
+          let active = 0;
+          let totalAmount = 0;
+          let totalProfits = 0;
+          
+          snapshot.forEach((doc) => {
+            const inv = doc.data();
+            if (inv.status === 'active') active++;
+            totalAmount += inv.amount || 0;
+            totalProfits += inv.profitPaid || 0;
+          });
+          
+          document.getElementById('activeInvestments').textContent = active;
+          document.getElementById('totalAmount').textContent = '₹' + totalAmount;
+          document.getElementById('totalProfits').textContent = '₹' + totalProfits;
+        });
+    }
+    
+    function loadInvestments() {
+      const db = firebase.firestore();
+      const tbody = document.getElementById('investmentsTable');
+      
+      let query = db.collection('investments')
+        .orderBy('startDate', 'desc')
+        .limit(itemsPerPage);
+      
+      if (currentPage > 1 && lastVisible) {
+        query = query.startAfter(lastVisible);
+      }
+      
+      query.get()
+        .then(async (snapshot) => {
+          lastVisible = snapshot.docs[snapshot.docs.length - 1];
+          tbody.innerHTML = '';
+          
+          for (const doc of snapshot.docs) {
+            const inv = doc.data();
+            
+            // Get user details
+            let userName = 'Unknown';
+            if (inv.userId) {
+              const userDoc = await db.collection('users').doc(inv.userId).get();
+              if (userDoc.exists) {
+                userName = userDoc.data().username || userDoc.data().email || 'Unknown';
+              }
+            }
+            
+            const startDate = inv.startDate ? new Date(inv.startDate.toDate()).toLocaleDateString() : 'N/A';
+            const endDate = inv.endDate ? new Date(inv.endDate.toDate()).toLocaleDateString() : 'N/A';
+            
+            tbody.innerHTML += `
+              <tr>
+                <td>${userName}</td>
+                <td>${inv.productName || 'Product'}</td>
+                <td>₹${inv.amount}</td>
+                <td>₹${inv.dailyProfit}</td>
+                <td>${startDate}</td>
+                <td>${endDate}</td>
+                <td><span class="badge ${inv.status}">${inv.status}</span></td>
+                <td>₹${inv.profitPaid || 0}</td>
+                <td>
+                  <button onclick="viewInvestment('${doc.id}')" class="btn-small">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button onclick="adjustProfit('${doc.id}')" class="btn-small">
+                    <i class="fas fa-coins"></i>
+                  </button>
+                </td>
+              </tr>
+            `;
+          }
+        });
+    }
+    
+    function loadDropdowns() {
+      const db = firebase.firestore();
+      
+      // Load users
+      db.collection('users').where('role', '==', 'user').get()
+        .then((snapshot) => {
+          const select = document.getElementById('userSelect');
+          snapshot.forEach((doc) => {
+            const user = doc.data();
+            select.innerHTML += `<option value="${doc.id}">${user.username || user.email}</option>`;
+          });
+        });
+      
+      // Load products
+      db.collection('products').where('active', '==', true).get()
+        .then((snapshot) => {
+          const productFilter = document.getElementById('productFilter');
+          const productSelect = document.getElementById('productSelect');
+          
+          snapshot.forEach((doc) => {
+            const product = doc.data();
+            productFilter.innerHTML += `<option value="${doc.id}">${product.name}</option>`;
+            productSelect.innerHTML += `<option value="${doc.id}" data-price="${product.price}" 
+              data-profit="${product.dailyProfit}" data-income="${product.totalIncome}" data-days="${product.days}">
+              ${product.name} - ₹${product.price}
+            </option>`;
+          });
+        });
+    }
+    
+    function showAddInvestmentModal() {
+      document.getElementById('addInvestmentModal').classList.add('active');
+    }
+    
+    function closeModal() {
+      document.getElementById('addInvestmentModal').classList.remove('active');
+    }
+    
+    function addManualInvestment() {
+      const userId = document.getElementById('userSelect').value;
+      const productId = document.getElementById('productSelect').value;
+      const quantity = parseInt(document.getElementById('quantity').value);
+      const startDate = new Date(document.getElementById('startDate').value);
+      const status = document.getElementById('investmentStatus').value;
+      
+      if (!userId || !productId) {
+        alert('Please select user and product');
+        return;
+      }
+      
+      const productSelect = document.getElementById('productSelect');
+      const selectedOption = productSelect.options[productSelect.selectedIndex];
+      const price = parseFloat(selectedOption.dataset.price);
+      const dailyProfit = parseFloat(selectedOption.dataset.profit);
+      const totalIncome = parseFloat(selectedOption.dataset.income);
+      const days = parseInt(selectedOption.dataset.days);
+      
+      const totalAmount = price * quantity;
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + days);
+      
+      const db = firebase.firestore();
+      db.collection('investments').add({
+        userId: userId,
+        productId: productId,
+        productName: selectedOption.text.split(' - ')[0],
+        quantity: quantity,
+        amount: totalAmount,
+        dailyProfit: dailyProfit * quantity,
+        totalIncome: totalIncome * quantity,
+        days: days,
+        startDate: startDate,
+        endDate: endDate,
+        status: status,
+        profitPaid: 0,
+        lastProfitDate: null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        // Update user total investment
+        return db.collection('users').doc(userId).update({
+          totalInvestment: firebase.firestore.FieldValue.increment(totalAmount)
+        });
+      }).then(() => {
+        alert('Investment added successfully!');
+        closeModal();
+        loadInvestments();
+        loadSummary();
+      }).catch((error) => {
+        alert('Error: ' + error.message);
+      });
+    }
+    
+    function processDailyProfits() {
+      if (!confirm('Process daily profits for all active investments?')) return;
+      
+      const db = firebase.firestore();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      db.collection('investments').where('status', '==', 'active').get()
+        .then((snapshot) => {
+          const batch = db.batch();
+          
+          snapshot.forEach((doc) => {
+            const inv = doc.data();
+            const lastProfit = inv.lastProfitDate ? inv.lastProfitDate.toDate() : null;
+            
+            // Check if profit already processed today
+            if (!lastProfit || lastProfit < today) {
+              const profitRef = db.collection('investments').doc(doc.id);
+              batch.update(profitRef, {
+                profitPaid: firebase.firestore.FieldValue.increment(inv.dailyProfit),
+                lastProfitDate: today
+              });
+              
+              // Add to user wallet
+              const userRef = db.collection('users').doc(inv.userId);
+              batch.update(userRef, {
+                wallet: firebase.firestore.FieldValue.increment(inv.dailyProfit),
+                totalEarnings: firebase.firestore.FieldValue.increment(inv.dailyProfit)
+              });
+              
+              // Create transaction record
+              const transRef = db.collection('transactions').doc();
+              batch.set(transRef, {
+                userId: inv.userId,
+                type: 'profit',
+                amount: inv.dailyProfit,
+                status: 'completed',
+                description: `Daily profit from ${inv.productName}`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            }
+          });
+          
+          return batch.commit();
+        })
+        .then(() => {
+          alert('Daily profits processed successfully!');
+          loadInvestments();
+          loadSummary();
+        })
+        .catch((error) => {
+          alert('Error: ' + error.message);
+        });
+    }
+    
+    function viewInvestment(id) {
+      // Open investment details modal
+      alert('View investment details: ' + id);
+    }
+    
+    function adjustProfit(id) {
+      const amount = prompt('Enter profit amount to add:');
+      if (!amount) return;
+      
+      const db = firebase.firestore();
+      db.collection('investments').doc(id).get()
+        .then((doc) => {
+          if (!doc.exists) throw new Error('Investment not found');
+          
+          const inv = doc.data();
+          const batch = db.batch();
+          
+          batch.update(db.collection('investments').doc(id), {
+            profitPaid: firebase.firestore.FieldValue.increment(parseFloat(amount))
+          });
+          
+          batch.update(db.collection('users').doc(inv.userId), {
+            wallet: firebase.firestore.FieldValue.increment(parseFloat(amount)),
+            totalEarnings: firebase.firestore.FieldValue.increment(parseFloat(amount))
+          });
+          
+          return batch.commit();
+        })
+        .then(() => {
+          alert('Profit adjusted successfully!');
+          loadInvestments();
+        })
+        .catch((error) => {
+          alert('Error: ' + error.message);
+        });
+    }
+    
+    function logout() {
+      firebase.auth().signOut()
+        .then(() => {
+          window.location.href = 'login.html';
+        });
+    }
+  </script>
+</body>
+          </html>
