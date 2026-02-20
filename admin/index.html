@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="../js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div class="admin-logo">
+        <i class="fas fa-crown"></i> Admin Panel
+      </div>
+      
+      <div class="admin-menu">
+        <a href="index.html" class="menu-item active">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"></i> Users
+        </a>
+        <a href="products.html" class="menu-item">
+          <i class="fas fa-box"></i> Products
+        </a>
+        <a href="investments.html" class="menu-item">
+          <i class="fas fa-chart-line"></i> Investments
+        </a>
+        <a href="transactions.html" class="menu-item">
+          <i class="fas fa-exchange-alt"></i> Transactions
+        </a>
+        <a href="referrals.html" class="menu-item">
+          <i class="fas fa-sitemap"></i> Referrals
+        </a>
+        <a href="checkin.html" class="menu-item">
+          <i class="fas fa-calendar-check"></i> Check-In
+        </a>
+        <a href="notifications.html" class="menu-item">
+          <i class="fas fa-bell"></i> Notifications
+        </a>
+        <a href="security.html" class="menu-item">
+          <i class="fas fa-shield-alt"></i> Security
+        </a>
+        <a href="roles.html" class="menu-item">
+          <i class="fas fa-user-tag"></i> Roles
+        </a>
+      </div>
+      
+      <div class="admin-footer">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span id="adminName">Admin</span>
+        </div>
+        <button onclick="logout()" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+      <div class="admin-header">
+        <h1>Dashboard Overview</h1>
+        <div class="header-actions">
+          <span class="date" id="currentDate"></span>
+          <button class="btn-small" onclick="refreshData()">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: linear-gradient(45deg, #4facfe, #00f2fe);">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Total Users</h3>
+            <div class="stat-value" id="totalUsers">0</div>
+            <small id="newUsersToday">+0 today</small>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" style="background: linear-gradient(45deg, #ff6b6b, #feca57);">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Active Users</h3>
+            <div class="stat-value" id="activeUsers">0</div>
+            <small>with investments</small>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" style="background: linear-gradient(45deg, #a8e063, #56ab2f);">
+            <i class="fas fa-rupee-sign"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Total Investment</h3>
+            <div class="stat-value" id="totalInvestment">₹0</div>
+            <small id="todayInvestment">+₹0 today</small>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" style="background: linear-gradient(45deg, #9b59b6, #8e44ad);">
+            <i class="fas fa-hand-holding-usd"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Total Withdrawals</h3>
+            <div class="stat-value" id="totalWithdrawals">₹0</div>
+            <small id="pendingWithdrawals">0 pending</small>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" style="background: linear-gradient(45deg, #f39c12, #e67e22);">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Pending Approvals</h3>
+            <div class="stat-value" id="pendingApprovals">0</div>
+            <small>awaiting action</small>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Daily Earnings</h3>
+            <div class="stat-value" id="dailyEarnings">₹0</div>
+            <small>today's profit</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>User Growth</h3>
+          <canvas id="userChart"></canvas>
+        </div>
+        
+        <div class="chart-card">
+          <h3>Investment Overview</h3>
+          <canvas id="investmentChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent Activities -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <!-- Recent Users -->
+        <div class="chart-card">
+          <h3>Recent Users</h3>
+          <div id="recentUsers">
+            <div class="text-center">Loading...</div>
+          </div>
+          <a href="users.html" class="view-all">View All →</a>
+        </div>
+        
+        <!-- Recent Transactions -->
+        <div class="chart-card">
+          <h3>Recent Transactions</h3>
+          <div id="recentTransactions">
+            <div class="text-center">Loading...</div>
+          </div>
+          <a href="transactions.html" class="view-all">View All →</a>
+        </div>
+      </div>
+
+      <!-- Pending Requests Table -->
+      <div class="chart-card">
+        <h3>Pending Requests</h3>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="pendingRequests">
+              <tr>
+                <td colspan="5" class="text-center">No pending requests</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let userChart, investmentChart;
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        checkAdminStatus(user.uid);
+      }
+    });
+    
+    function checkAdminStatus(userId) {
+      firebase.firestore().collection('users').doc(userId).get()
+        .then((doc) => {
+          if (!doc.exists || doc.data().role !== 'admin') {
+            window.location.href = '../dashboard.html';
+          } else {
+            document.getElementById('adminName').textContent = doc.data().username || 'Admin';
+            loadDashboardData();
+          }
+        });
+    }
+    
+    function loadDashboardData() {
+      const db = firebase.firestore();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      document.getElementById('currentDate').textContent = today.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      // Load total users
+      db.collection('users').get()
+        .then((snapshot) => {
+          document.getElementById('totalUsers').textContent = snapshot.size;
+          
+          // Count new users today
+          let newToday = 0;
+          snapshot.forEach((doc) => {
+            const user = doc.data();
+            if (user.createdAt && user.createdAt.toDate() >= today) {
+              newToday++;
+            }
+          });
+          document.getElementById('newUsersToday').textContent = `+${newToday} today`;
+          
+          // Count active users (with investments)
+          let activeCount = 0;
+          snapshot.forEach((doc) => {
+            if (doc.data().totalInvestment > 0) {
+              activeCount++;
+            }
+          });
+          document.getElementById('activeUsers').textContent = activeCount;
+        });
+      
+      // Load investment data
+      db.collection('investments').get()
+        .then((snapshot) => {
+          let total = 0;
+          let todayTotal = 0;
+          
+          snapshot.forEach((doc) => {
+            const inv = doc.data();
+            total += inv.amount || 0;
+            
+            if (inv.startDate && inv.startDate.toDate() >= today) {
+              todayTotal += inv.amount || 0;
+            }
+          });
+          
+          document.getElementById('totalInvestment').textContent = '₹' + total;
+          document.getElementById('todayInvestment').textContent = `+₹${todayTotal} today`;
+        });
+      
+      // Load withdrawal data
+      Promise.all([
+        db.collection('withdrawals').where('status', '==', 'approved').get(),
+        db.collection('withdrawals').where('status', '==', 'pending').get()
+      ]).then(([approved, pending]) => {
+        let total = 0;
+        approved.forEach((doc) => {
+          total += doc.data().amount || 0;
+        });
+        
+        document.getElementById('totalWithdrawals').textContent = '₹' + total;
+        document.getElementById('pendingWithdrawals').textContent = pending.size + ' pending';
+      });
+      
+      // Count pending approvals
+      Promise.all([
+        db.collection('withdrawals').where('status', '==', 'pending').get(),
+        db.collection('recharges').where('status', '==', 'pending').get()
+      ]).then(([withdrawals, recharges]) => {
+        document.getElementById('pendingApprovals').textContent = withdrawals.size + recharges.size;
+      });
+      
+      // Load daily earnings
+      db.collection('transactions')
+        .where('type', '==', 'profit')
+        .where('timestamp', '>=', today)
+        .get()
+        .then((snapshot) => {
+          let total = 0;
+          snapshot.forEach((doc) => {
+            total += doc.data().amount || 0;
+          });
+          document.getElementById('dailyEarnings').textContent = '₹' + total;
+        });
+      
+      // Load recent users
+      db.collection('users')
+        .orderBy('createdAt', 'desc')
+        .limit(5)
+        .get()
+        .then((snapshot) => {
+          const container = document.getElementById('recentUsers');
+          let html = '';
+          
+          snapshot.forEach((doc) => {
+            const user = doc.data();
+            const date = user.createdAt ? new Date(user.createdAt.toDate()).toLocaleDateString() : 'N/A';
+            html += `
+              <div style="display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">
+                <i class="fas fa-user-circle" style="font-size: 30px; color: #667eea; margin-right: 10px;"></i>
+                <div style="flex: 1;">
+                  <div style="font-weight: bold;">${user.username || 'User'}</div>
+                  <div style="font-size: 12px; color: #666;">${user.email}</div>
+                </div>
+                <div style="font-size: 12px; color: #999;">${date}</div>
+              </div>
+            `;
+          });
+          container.innerHTML = html;
+        });
+      
+      // Load recent transactions
+      db.collection('transactions')
+        .orderBy('timestamp', 'desc')
+        .limit(5)
+        .get()
+        .then((snapshot) => {
+          const container = document.getElementById('recentTransactions');
+          let html = '';
+          
+          snapshot.forEach((doc) => {
+            const trans = doc.data();
+            const date = trans.timestamp ? new Date(trans.timestamp.toDate()).toLocaleDateString() : 'N/A';
+            html += `
+              <div style="display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">
+                <i class="fas ${trans.type === 'recharge' ? 'fa-wallet' : trans.type === 'withdrawal' ? 'fa-hand-holding-usd' : 'fa-exchange-alt'}" 
+                   style="font-size: 20px; color: ${trans.type === 'recharge' ? '#4caf50' : trans.type === 'withdrawal' ? '#f44336' : '#4facfe'}; margin-right: 10px;"></i>
+                <div style="flex: 1;">
+                  <div style="font-weight: bold;">${trans.type}</div>
+                  <div style="font-size: 12px; color: #666;">₹${trans.amount}</div>
+                </div>
+                <div>
+                  <span class="badge ${trans.status}">${trans.status}</span>
+                  <div style="font-size: 11px; color: #999;">${date}</div>
+                </div>
+              </div>
+            `;
+          });
+          container.innerHTML = html;
+        });
+      
+      // Load pending requests
+      Promise.all([
+        db.collection('withdrawals').where('status', '==', 'pending').limit(5).get(),
+        db.collection('recharges').where('status', '==', 'pending').limit(5).get()
+      ]).then(([withdrawals, recharges]) => {
+        const tbody = document.getElementById('pendingRequests');
+        tbody.innerHTML = '';
+        
+        withdrawals.forEach((doc) => {
+          const req = doc.data();
+          tbody.innerHTML += `
+            <tr>
+              <td>${req.userId ? req.userId.slice(0, 8) + '...' : 'Unknown'}</td>
+              <td>Withdrawal</td>
+              <td>₹${req.amount}</td>
+              <td>${req.timestamp ? new Date(req.timestamp.toDate()).toLocaleDateString() : 'N/A'}</td>
+              <td>
+                <button onclick="approveRequest('withdrawal', '${doc.id}')" class="btn-small" style="background: #4caf50;">✓</button>
+                <button onclick="rejectRequest('withdrawal', '${doc.id}')" class="btn-small" style="background: #f44336;">✗</button>
+              </td>
+            </tr>
+          `;
+        });
+        
+        recharges.forEach((doc) => {
+          const req = doc.data();
+          tbody.innerHTML += `
+            <tr>
+              <td>${req.userId ? req.userId.slice(0, 8) + '...' : 'Unknown'}</td>
+              <td>Recharge</td>
+              <td>₹${req.amount}</td>
+              <td>${req.timestamp ? new Date(req.timestamp.toDate()).toLocaleDateString() : 'N/A'}</td>
+              <td>
+                <button onclick="approveRequest('recharge', '${doc.id}')" class="btn-small" style="background: #4caf50;">✓</button>
+                <button onclick="rejectRequest('recharge', '${doc.id}')" class="btn-small" style="background: #f44336;">✗</button>
+              </td>
+            </tr>
+          `;
+        });
+        
+        if (withdrawals.empty && recharges.empty) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center">No pending requests</td></tr>';
+        }
+      });
+      
+      // Initialize charts
+      initCharts();
+    }
+    
+    function initCharts() {
+      // User Growth Chart
+      const ctx = document.getElementById('userChart').getContext('2d');
+      if (userChart) userChart.destroy();
+      
+      userChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'New Users',
+            data: [12, 19, 3, 5, 2, 3],
+            borderColor: '#4facfe',
+            backgroundColor: 'rgba(79, 172, 254, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          }
+        }
+      });
+
+      // Investment Chart
+      const ctx2 = document.getElementById('investmentChart').getContext('2d');
+      if (investmentChart) investmentChart.destroy();
+      
+      investmentChart = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: ['Active', 'Completed', 'Pending'],
+          datasets: [{
+            data: [300000, 150000, 50000],
+            backgroundColor: ['#4caf50', '#ff9800', '#f44336']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+    }
+    
+    function approveRequest(type, id) {
+      const db = firebase.firestore();
+      const collection = type === 'withdrawal' ? 'withdrawals' : 'recharges';
+      
+      db.collection(collection).doc(id).update({
+        status: 'completed',
+        approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        approvedBy: firebase.auth().currentUser.uid
+      }).then(() => {
+        if (type === 'recharge') {
+          // Add money to user wallet
+          return db.collection(collection).doc(id).get();
+        }
+      }).then((doc) => {
+        if (doc && type === 'recharge') {
+          const amount = doc.data().amount;
+          const userId = doc.data().userId;
+          
+          return db.collection('users').doc(userId).update({
+            wallet: firebase.firestore.FieldValue.increment(amount)
+          });
+        }
+      }).then(() => {
+        alert('Request approved!');
+        loadDashboardData();
+      }).catch((error) => {
+        alert('Error: ' + error.message);
+      });
+    }
+    
+    function rejectRequest(type, id) {
+      if (!confirm('Are you sure you want to reject this request?')) return;
+      
+      const db = firebase.firestore();
+      const collection = type === 'withdrawal' ? 'withdrawals' : 'recharges';
+      
+      db.collection(collection).doc(id).update({
+        status: 'rejected',
+        rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        rejectedBy: firebase.auth().currentUser.uid
+      }).then(() => {
+        alert('Request rejected!');
+        loadDashboardData();
+      });
+    }
+    
+    function refreshData() {
+      loadDashboardData();
+    }
+    
+    function logout() {
+      firebase.auth().signOut()
+        .then(() => {
+          window.location.href = 'login.html';
+        });
+    }
+  </script>
+</body>
+</html>
