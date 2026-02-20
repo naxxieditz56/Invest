@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referral Management - Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div class="admin-logo">
+        <i class="fas fa-crown"></i> Admin Panel
+      </div>
+      
+      <div class="admin-menu">
+        <a href="index.html" class="menu-item">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"></i> Users
+        </a>
+        <a href="products.html" class="menu-item">
+          <i class="fas fa-box"></i> Products
+        </a>
+        <a href="investments.html" class="menu-item">
+          <i class="fas fa-chart-line"></i> Investments
+        </a>
+        <a href="transactions.html" class="menu-item">
+          <i class="fas fa-exchange-alt"></i> Transactions
+        </a>
+        <a href="referrals.html" class="menu-item active">
+          <i class="fas fa-sitemap"></i> Referrals
+        </a>
+        <a href="checkin.html" class="menu-item">
+          <i class="fas fa-calendar-check"></i> Check-In
+        </a>
+        <a href="notifications.html" class="menu-item">
+          <i class="fas fa-bell"></i> Notifications
+        </a>
+        <a href="security.html" class="menu-item">
+          <i class="fas fa-shield-alt"></i> Security
+        </a>
+        <a href="roles.html" class="menu-item">
+          <i class="fas fa-user-tag"></i> Roles
+        </a>
+      </div>
+      
+      <div class="admin-footer">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span id="adminName">Admin</span>
+        </div>
+        <button onclick="logout()" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+      <div class="admin-header">
+        <h1>Referral System Management</h1>
+        <div class="header-actions">
+          <button class="btn" onclick="showSettingsModal()">
+            <i class="fas fa-cog"></i> Referral Settings
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+        <div style="background: linear-gradient(45deg, #4facfe, #00f2fe); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Total Referrals</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="totalReferrals">0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #4caf50, #8bc34a); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Total Bonus Paid</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="totalBonus">₹0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #ff9800, #f57c00); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Top Referrer</div>
+          <div style="color: white; font-size: 18px; font-weight: bold;" id="topReferrer">-</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #9b59b6, #8e44ad); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Conversion Rate</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="conversionRate">0%</div>
+        </div>
+      </div>
+
+      <!-- Referral Levels -->
+      <div style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #333; margin-bottom: 15px;">Referral Bonus Levels</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+          <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+            <div style="font-size: 14px; color: #666;">Level 1</div>
+            <div style="font-size: 24px; font-weight: bold; color: #4facfe;" id="level1Bonus">5%</div>
+          </div>
+          <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+            <div style="font-size: 14px; color: #666;">Level 2</div>
+            <div style="font-size: 24px; font-weight: bold; color: #ff6b6b;" id="level2Bonus">3%</div>
+          </div>
+          <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+            <div style="font-size: 14px; color: #666;">Level 3</div>
+            <div style="font-size: 24px; font-weight: bold; color: #4caf50;" id="level3Bonus">1%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Referrers -->
+      <div style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #333; margin-bottom: 15px;">🏆 Top Referrers</h3>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>User</th>
+                <th>Total Referrals</th>
+                <th>Level 1</th>
+                <th>Level 2</th>
+                <th>Level 3</th>
+                <th>Total Earnings</th>
+              </tr>
+            </thead>
+            <tbody id="topReferrersTable">
+              <tr>
+                <td colspan="7" class="text-center">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Referral Tree View -->
+      <div style="background: white; border-radius: 10px; padding: 20px;">
+        <h3 style="color: #333; margin-bottom: 15px;">Referral Network</h3>
+        
+        <div style="margin-bottom: 15px;">
+          <input type="text" id="searchReferrer" class="form-control" placeholder="Search user by ID or email..." style="max-width: 300px;">
+          <button onclick="searchReferralTree()" class="btn-small">Search</button>
+        </div>
+        
+        <div id="referralTree" style="min-height: 200px; border: 1px solid #eee; border-radius: 5px; padding: 20px;">
+          <div class="text-center">Enter a user ID to view their referral tree</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Referral Settings</h2>
+        <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
+      </div>
+      
+      <form onsubmit="event.preventDefault(); saveSettings();">
+        <div class="form-group">
+          <label>Level 1 Bonus (%)</label>
+          <input type="number" id="level1Input" class="form-control" step="0.1" min="0" max="100" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Level 2 Bonus (%)</label>
+          <input type="number" id="level2Input" class="form-control" step="0.1" min="0" max="100" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Level 3 Bonus (%)</label>
+          <input type="number" id="level3Input" class="form-control" step="0.1" min="0" max="100" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Minimum Investment for Referral Bonus (₹)</label>
+          <input type="number" id="minInvestment" class="form-control" min="0" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Bonus Payment Type</label>
+          <select id="bonusType" class="form-control">
+            <option value="instant">Instant</option>
+            <option value="after_investment">After Investment</option>
+            <option value="after_profit">After Profit</option>
+          </select>
+        </div>
+        
+        <button type="submit" class="btn">Save Settings</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        checkAdminStatus(user.uid);
+      }
+    });
+    
+    function checkAdminStatus(userId) {
+      firebase.firestore().collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists && doc.data().role === 'admin') {
+            document.getElementById('adminName').textContent = doc.data().username || 'Admin';
+            loadReferralData();
+            loadSettings();
+            loadTopReferrers();
+          } else {
+            window.location.href = '../dashboard.html';
+          }
+        });
+    }
+    
+    function loadReferralData() {
+      const db = firebase.firestore();
+      
+      // Count total referrals
+      db.collection('users').where('referredBy', '!=', null).get()
+        .then((snapshot) => {
+          document.getElementById('totalReferrals').textContent = snapshot.size;
+          
+          // Calculate conversion rate
+          db.collection('users').get()
+            .then((allUsers) => {
+              const rate = allUsers.size > 0 ? ((snapshot.size / allUsers.size) * 100).toFixed(1) : 0;
+              document.getElementById('conversionRate').textContent = rate + '%';
+            });
+        });
+      
+      // Calculate total bonus paid
+      db.collection('transactions').where('type', '==', 'referral_bonus').get()
+        .then((snapshot) => {
+          let total = 0;
+          snapshot.forEach((doc) => {
+            total += doc.data().amount || 0;
+          });
+          document.getElementById('totalBonus').textContent = '₹' + total;
+        });
+      
+      // Find top referrer
+      db.collection('users').orderBy('referrals', 'desc').limit(1).get()
+        .then((snapshot) => {
+          if (!snapshot.empty) {
+            const topUser = snapshot.docs[0].data();
+            document.getElementById('topReferrer').textContent = topUser.username || 'User';
+          }
+        });
+    }
+    
+    function loadSettings() {
+      const db = firebase.firestore();
+      
+      db.collection('settings').doc('referral').get()
+        .then((doc) => {
+          if (doc.exists) {
+            const settings = doc.data();
+            document.getElementById('level1Bonus').textContent = settings.level1 + '%';
+            document.getElementById('level2Bonus').textContent = settings.level2 + '%';
+            document.getElementById('level3Bonus').textContent = settings.level3 + '%';
+          } else {
+            // Default settings
+            document.getElementById('level1Bonus').textContent = '5%';
+            document.getElementById('level2Bonus').textContent = '3%';
+            document.getElementById('level3Bonus').textContent = '1%';
+          }
+        });
+    }
+    
+    function loadTopReferrers() {
+      const db = firebase.firestore();
+      const tbody = document.getElementById('topReferrersTable');
+      
+      db.collection('users')
+        .orderBy('referrals', 'desc')
+        .limit(10)
+        .get()
+        .then(async (snapshot) => {
+          tbody.innerHTML = '';
+          let rank = 1;
+          
+          for (const doc of snapshot.docs) {
+            const user = doc.data();
+            
+            // Count referrals by level
+            const level1 = await db.collection('users').where('referredBy', '==', doc.id).get();
+            let level2 = 0;
+            for (const level1Doc of level1.docs) {
+              const level2Count = await db.collection('users').where('referredBy', '==', level1Doc.id).get();
+              level2 += level2Count.size;
+            }
+            
+            // Calculate total earnings
+            const earnings = await db.collection('transactions')
+              .where('userId', '==', doc.id)
+              .where('type', '==', 'referral_bonus')
+              .get();
+            
+            let totalEarnings = 0;
+            earnings.forEach((e) => {
+              totalEarnings += e.data().amount || 0;
+            });
+            
+            tbody.innerHTML += `
+              <tr>
+                <td>#${rank}</td>
+                <td>
+                  <div>${user.username || 'User'}</div>
+                  <small style="color: #999;">${user.email || ''}</small>
+                </td>
+                <td>${user.referrals || 0}</td>
+                <td>${level1.size}</td>
+                <td>${level2}</td>
+                <td>-</td>
+                <td>₹${totalEarnings}</td>
+              </tr>
+            `;
+            rank++;
+          }
+        });
+    }
+    
+    function searchReferralTree() {
+      const searchTerm = document.getElementById('searchReferrer').value;
+      if (!searchTerm) return;
+      
+      const db = firebase.firestore();
+      const container = document.getElementById('referralTree');
+      
+      container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+      
+      // Find user by ID or email
+      let query;
+      if (searchTerm.includes('@')) {
+        query = db.collection('users').where('email', '==', searchTerm);
+      } else {
+        query = db.collection('users').doc(searchTerm).get();
+      }
+      
+      Promise.resolve(query)
+        .then(async (result) => {
+          let userId, userData;
+          
+          if (result.docs) {
+            // Email search
+            if (result.empty) throw new Error('User not found');
+            userId = result.docs[0].id;
+            userData = result.docs[0].data();
+          } else {
+            // ID search
+            if (!result.exists) throw new Error('User not found');
+            userId = searchTerm;
+            userData = result.data();
+          }
+          
+          // Build referral tree
+          let treeHTML = `
+            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+              <div style="font-weight: bold; color: #4facfe;">${userData.username || 'User'}</div>
+              <div style="font-size: 12px; color: #666;">${userData.email}</div>
+              <div style="font-size: 12px; color: #666;">Referral Code: ${userData.referralCode || 'N/A'}</div>
+            </div>
+            <div style="margin-left: 20px;">
+              <h4>Referral Tree</h4>
+          `;
+          
+          // Get level 1 referrals
+          const level1 = await db.collection('users').where('referredBy', '==', userId).get();
+          
+          if (level1.empty) {
+            treeHTML += '<div style="color: #999; padding: 10px;">No referrals yet</div>';
+          } else {
+            treeHTML += '<ul style="list-style: none; padding-left: 20px;">';
+            
+            for (const doc of level1.docs) {
+              const ref1 = doc.data();
+              treeHTML += `
+                <li style="margin-bottom: 10px; position: relative;">
+                  <div style="padding: 10px; background: #f0f0f0; border-radius: 5px; margin-bottom: 5px;">
+                    <div><strong>${ref1.username || 'User'}</strong> (Level 1)</div>
+                    <div style="font-size: 11px; color: #666;">${ref1.email}</div>
+                  </div>
+              `;
+              
+              // Get level 2 referrals
+              const level2 = await db.collection('users').where('referredBy', '==', doc.id).get();
+              if (!level2.empty) {
+                treeHTML += '<ul style="list-style: none; padding-left: 20px;">';
+                for (const level2Doc of level2.docs) {
+                  const ref2 = level2Doc.data();
+                  treeHTML += `
+                    <li style="margin-bottom: 5px;">
+                      <div style="padding: 8px; background: #e0e0e0; border-radius: 5px;">
+                        <div><strong>${ref2.username || 'User'}</strong> (Level 2)</div>
+                        <div style="font-size: 11px; color: #666;">${ref2.email}</div>
+                      </div>
+                    </li>
+                  `;
+                }
+                treeHTML += '</ul>';
+              }
+              
+              treeHTML += '</li>';
+            }
+            treeHTML += '</ul>';
+          }
+          
+          treeHTML += '</div>';
+          container.innerHTML = treeHTML;
+        })
+        .catch((error) => {
+          container.innerHTML = `<div class="text-center" style="color: #f44336;">Error: ${error.message}</div>`;
+        });
+    }
+    
+    function showSettingsModal() {
+      const db = firebase.firestore();
+      
+      db.collection('settings').doc('referral').get()
+        .then((doc) => {
+          if (doc.exists) {
+            const settings = doc.data();
+            document.getElementById('level1Input').value = settings.level1;
+            document.getElementById('level2Input').value = settings.level2;
+            document.getElementById('level3Input').value = settings.level3;
+            document.getElementById('minInvestment').value = settings.minInvestment || 100;
+            document.getElementById('bonusType').value = settings.bonusType || 'instant';
+          } else {
+            document.getElementById('level1Input').value = 5;
+            document.getElementById('level2Input').value = 3;
+            document.getElementById('level3Input').value = 1;
+            document.getElementById('minInvestment').value = 100;
+            document.getElementById('bonusType').value = 'instant';
+          }
+        });
+      
+      document.getElementById('settingsModal').classList.add('active');
+    }
+    
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.remove('active');
+    }
+    
+    function saveSettings() {
+      const settings = {
+        level1: parseFloat(document.getElementById('level1Input').value),
+        level2: parseFloat(document.getElementById('level2Input').value),
+        level3: parseFloat(document.getElementById('level3Input').value),
+        minInvestment: parseFloat(document.getElementById('minInvestment').value),
+        bonusType: document.getElementById('bonusType').value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      
+      const db = firebase.firestore();
+      db.collection('settings').doc('referral').set(settings, { merge: true })
+        .then(() => {
+          alert('Settings saved successfully!');
+          closeSettingsModal();
+          loadSettings();
+        })
+        .catch((error) => {
+          alert('Error: ' + error.message);
+        });
+    }
+    
+    function logout() {
+      firebase.auth().signOut()
+        .then(() => {
+          window.location.href = 'login.html';
+        });
+    }
+  </script>
+</body>
+  </html>
