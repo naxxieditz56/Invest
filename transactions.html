@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction History - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="mobile-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo" onclick="history.back()">
+        <i class="fas fa-arrow-left" style="margin-right: 10px;"></i> Transactions
+      </div>
+      <div class="top-icons">
+        <i class="fas fa-filter" onclick="showFilter()"></i>
+        <i class="fas fa-download" onclick="exportTransactions()"></i>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 15px;">
+        <i class="fas fa-arrow-down" style="color: #4caf50; font-size: 20px; margin-bottom: 5px;"></i>
+        <div style="color: rgba(255,255,255,0.8); font-size: 12px;">Total Credits</div>
+        <div style="color: white; font-size: 20px; font-weight: bold;" id="totalCredits">₹0</div>
+      </div>
+      <div style="background: linear-gradient(135deg, #ff6b6b, #feca57); border-radius: 15px; padding: 15px;">
+        <i class="fas fa-arrow-up" style="color: #f44336; font-size: 20px; margin-bottom: 5px;"></i>
+        <div style="color: rgba(255,255,255,0.8); font-size: 12px;">Total Debits</div>
+        <div style="color: white; font-size: 20px; font-weight: bold;" id="totalDebits">₹0</div>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding: 5px 0;">
+      <button onclick="filterTransactions('all')" class="filter-btn active" style="background: linear-gradient(45deg, #4facfe, #00f2fe); border: none; padding: 8px 15px; border-radius: 20px; color: white; white-space: nowrap;">All</button>
+      <button onclick="filterTransactions('investment')" class="filter-btn" style="background: rgba(255,255,255,0.15); border: none; padding: 8px 15px; border-radius: 20px; color: white; white-space: nowrap;">Investments</button>
+      <button onclick="filterTransactions('recharge')" class="filter-btn" style="background: rgba(255,255,255,0.15); border: none; padding: 8px 15px; border-radius: 20px; color: white; white-space: nowrap;">Recharges</button>
+      <button onclick="filterTransactions('withdrawal')" class="filter-btn" style="background: rgba(255,255,255,0.15); border: none; padding: 8px 15px; border-radius: 20px; color: white; white-space: nowrap;">Withdrawals</button>
+      <button onclick="filterTransactions('profit')" class="filter-btn" style="background: rgba(255,255,255,0.15); border: none; padding: 8px 15px; border-radius: 20px; color: white; white-space: nowrap;">Profits</button>
+      <button onclick="filterTransactions('referral')" class="filter-btn" style="background: rgba(255,255,255,0.15); border: none; padding: 8px 15px; border-radius: 20px; color: white; white-space: nowrap;">Referrals</button>
+    </div>
+
+    <!-- Date Range -->
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <select id="monthFilter" class="form-control" style="flex: 1;">
+        <option value="1">January</option>
+        <option value="2" selected>February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+      <select id="yearFilter" class="form-control" style="flex: 1;">
+        <option value="2025">2025</option>
+        <option value="2026" selected>2026</option>
+        <option value="2027">2027</option>
+      </select>
+    </div>
+
+    <!-- Transaction List -->
+    <div class="transaction-list">
+      <h3 style="color: white; margin-bottom: 15px;">Transaction History</h3>
+      <div id="transactionsList">
+        <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 30px;">
+          <i class="fas fa-spinner fa-spin fa-2x"></i>
+          <p style="margin-top: 10px;">Loading transactions...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load More Button -->
+    <button onclick="loadMoreTransactions()" class="btn btn-secondary" style="margin-top: 15px;" id="loadMoreBtn">
+      Load More
+    </button>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="location.href='dashboard.html'">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" onclick="location.href='products.html'">
+        <i class="fas fa-box"></i>
+        <span>Products</span>
+      </div>
+      <div class="nav-item" onclick="location.href='promotion.html'">
+        <i class="fas fa-bullhorn"></i>
+        <span>Promotion</span>
+      </div>
+      <div class="nav-item" onclick="location.href='profile.html'">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let lastVisible = null;
+    let currentFilter = 'all';
+    let loading = false;
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        currentUser = user;
+        loadTransactions();
+        loadTotals(user.uid);
+      }
+    });
+    
+    function loadTotals(userId) {
+      const db = firebase.firestore();
+      
+      // Calculate total credits
+      db.collection('transactions')
+        .where('userId', '==', userId)
+        .where('type', 'in', ['recharge', 'profit', 'referral_bonus', 'checkin_bonus'])
+        .get()
+        .then((snapshot) => {
+          let total = 0;
+          snapshot.forEach((doc) => {
+            total += doc.data().amount;
+          });
+          document.getElementById('totalCredits').textContent = '₹' + total;
+        });
+      
+      // Calculate total debits
+      db.collection('transactions')
+        .where('userId', '==', userId)
+        .where('type', 'in', ['investment', 'withdrawal'])
+        .get()
+        .then((snapshot) => {
+          let total = 0;
+          snapshot.forEach((doc) => {
+            total += doc.data().amount;
+          });
+          document.getElementById('totalDebits').textContent = '₹' + total;
+        });
+    }
+    
+    function loadTransactions(reset = true) {
+      if (loading) return;
+      loading = true;
+      
+      const db = firebase.firestore();
+      let query = db.collection('transactions')
+        .where('userId', '==', currentUser.uid)
+        .orderBy('timestamp', 'desc')
+        .limit(20);
+      
+      if (!reset && lastVisible) {
+        query = query.startAfter(lastVisible);
+      }
+      
+      if (currentFilter !== 'all') {
+        query = query.where('type', '==', currentFilter);
+      }
+      
+      query.get()
+        .then((snapshot) => {
+          const container = document.getElementById('transactionsList');
+          
+          if (reset) {
+            container.innerHTML = '';
+          }
+          
+          if (snapshot.empty && reset) {
+            container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 30px;">No transactions found</div>';
+            document.getElementById('loadMoreBtn').style.display = 'none';
+            loading = false;
+            return;
+          }
+          
+          lastVisible = snapshot.docs[snapshot.docs.length - 1];
+          
+          snapshot.forEach((doc) => {
+            const trans = doc.data();
+            const date = trans.timestamp ? new Date(trans.timestamp.toDate()) : new Date();
+            
+            let icon = 'fa-exchange-alt';
+            let iconColor = '#4facfe';
+            
+            if (trans.type === 'investment') {
+              icon = 'fa-chart-line';
+              iconColor = '#ff6b6b';
+            } else if (trans.type === 'recharge') {
+              icon = 'fa-wallet';
+              iconColor = '#4caf50';
+            } else if (trans.type === 'withdrawal') {
+              icon = 'fa-hand-holding-usd';
+              iconColor = '#f44336';
+            } else if (trans.type === 'profit') {
+              icon = 'fa-coins';
+              iconColor = '#ffd700';
+            } else if (trans.type === 'referral_bonus') {
+              icon = 'fa-users';
+              iconColor = '#9b59b6';
+            } else if (trans.type === 'checkin_bonus') {
+              icon = 'fa-calendar-check';
+              iconColor = '#00f2fe';
+            }
+            
+            const amountClass = ['investment', 'withdrawal'].includes(trans.type) ? 'negative' : 'positive';
+            
+            container.innerHTML += `
+              <div class="transaction-item">
+                <div class="transaction-info">
+                  <div class="transaction-icon" style="background: ${iconColor}20;">
+                    <i class="fas ${icon}" style="color: ${iconColor};"></i>
+                  </div>
+                  <div class="transaction-details">
+                    <h4>${trans.description || trans.type}</h4>
+                    <p>${date.toLocaleDateString()} ${date.toLocaleTimeString()}</p>
+                  </div>
+                </div>
+                <div class="transaction-amount">
+                  <span class="amount ${amountClass}">${amountClass === 'positive' ? '+' : '-'}₹${trans.amount}</span>
+                  <span class="status ${trans.status}">${trans.status}</span>
+                </div>
+              </div>
+            `;
+          });
+          
+          document.getElementById('loadMoreBtn').style.display = snapshot.size < 20 ? 'none' : 'block';
+          loading = false;
+        })
+        .catch((error) => {
+          console.error('Error loading transactions:', error);
+          loading = false;
+        });
+    }
+    
+    function filterTransactions(filter) {
+      currentFilter = filter;
+      
+      // Update active filter button
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.style.background = 'rgba(255,255,255,0.15)';
+      });
+      event.target.style.background = 'linear-gradient(45deg, #4facfe, #00f2fe)';
+      
+      loadTransactions(true);
+    }
+    
+    function loadMoreTransactions() {
+      loadTransactions(false);
+    }
+    
+    function showFilter() {
+      alert('Filter options:\n\n• By date\n• By type\n• By amount\n• By status');
+    }
+    
+    function exportTransactions() {
+      // In real app, this would generate CSV/PDF
+      alert('Export feature coming soon!');
+    }
+  </script>
+</body>
+  </html>
