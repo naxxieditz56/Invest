@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Withdraw Funds - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="mobile-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo" onclick="history.back()">
+        <i class="fas fa-arrow-left" style="margin-right: 10px;"></i> Withdraw
+      </div>
+      <div class="top-icons">
+        <i class="fas fa-history" onclick="location.href='transactions.html'"></i>
+      </div>
+    </div>
+
+    <!-- Current Balance -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 20px; margin-bottom: 20px;">
+      <div style="color: rgba(255,255,255,0.8); font-size: 14px;">Available Balance</div>
+      <div style="color: white; font-size: 36px; font-weight: bold;" id="availableBalance">₹0</div>
+      <div style="color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 5px;">Minimum withdrawal: ₹500</div>
+    </div>
+
+    <!-- Withdrawal Limits Info -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+      <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; text-align: center;">
+        <i class="fas fa-clock" style="color: #4facfe; font-size: 20px; margin-bottom: 5px;"></i>
+        <div style="color: white; font-size: 14px; font-weight: bold;">Daily Limit</div>
+        <div style="color: #ffd700;">₹50,000</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; text-align: center;">
+        <i class="fas fa-calendar-alt" style="color: #4caf50; font-size: 20px; margin-bottom: 5px;"></i>
+        <div style="color: white; font-size: 14px; font-weight: bold;">Monthly Limit</div>
+        <div style="color: #ffd700;">₹5,00,000</div>
+      </div>
+    </div>
+
+    <!-- Quick Withdrawal Amounts -->
+    <div style="margin-bottom: 20px;">
+      <h3 style="color: white; margin-bottom: 15px;">Quick Amounts</h3>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+        <button onclick="setWithdrawAmount(500)" class="quick-amount" style="background: rgba(255,255,255,0.15); border: none; border-radius: 15px; padding: 15px 5px; color: white;">₹500</button>
+        <button onclick="setWithdrawAmount(1000)" class="quick-amount" style="background: rgba(255,255,255,0.15); border: none; border-radius: 15px; padding: 15px 5px; color: white;">₹1000</button>
+        <button onclick="setWithdrawAmount(2000)" class="quick-amount" style="background: rgba(255,255,255,0.15); border: none; border-radius: 15px; padding: 15px 5px; color: white;">₹2000</button>
+        <button onclick="setWithdrawAmount(5000)" class="quick-amount" style="background: rgba(255,255,255,0.15); border: none; border-radius: 15px; padding: 15px 5px; color: white;">₹5000</button>
+      </div>
+    </div>
+
+    <!-- Withdrawal Form -->
+    <div style="background: rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; margin-bottom: 20px;">
+      <h3 style="color: white; margin-bottom: 15px;">Withdrawal Details</h3>
+      
+      <div class="form-group">
+        <label style="color: white;">Amount (₹)</label>
+        <input type="number" id="withdrawAmount" class="form-control" placeholder="Enter amount" min="500" step="1">
+      </div>
+      
+      <div class="form-group">
+        <label style="color: white;">Select Withdrawal Method</label>
+        <select id="withdrawMethod" class="form-control" onchange="toggleMethodFields()">
+          <option value="bank">Bank Transfer</option>
+          <option value="upi">UPI</option>
+          <option value="paytm">Paytm Wallet</option>
+        </select>
+      </div>
+      
+      <!-- Bank Transfer Fields -->
+      <div id="bankFields">
+        <div class="form-group">
+          <label style="color: white;">Account Holder Name</label>
+          <input type="text" id="accountHolder" class="form-control" placeholder="Enter name as per bank">
+        </div>
+        <div class="form-group">
+          <label style="color: white;">Account Number</label>
+          <input type="text" id="accountNumber" class="form-control" placeholder="Enter account number">
+        </div>
+        <div class="form-group">
+          <label style="color: white;">IFSC Code</label>
+          <input type="text" id="ifscCode" class="form-control" placeholder="Enter IFSC code">
+        </div>
+        <div class="form-group">
+          <label style="color: white;">Bank Name</label>
+          <input type="text" id="bankName" class="form-control" placeholder="Enter bank name">
+        </div>
+      </div>
+      
+      <!-- UPI Fields -->
+      <div id="upiFields" style="display: none;">
+        <div class="form-group">
+          <label style="color: white;">UPI ID</label>
+          <input type="text" id="upiId" class="form-control" placeholder="example@okhdfcbank">
+        </div>
+      </div>
+      
+      <!-- Paytm Fields -->
+      <div id="paytmFields" style="display: none;">
+        <div class="form-group">
+          <label style="color: white;">Paytm Number</label>
+          <input type="text" id="paytmNumber" class="form-control" placeholder="Enter mobile number">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label style="color: white;">Remarks (Optional)</label>
+        <textarea id="remarks" class="form-control" rows="2" placeholder="Any notes for withdrawal"></textarea>
+      </div>
+    </div>
+
+    <!-- Withdrawal Info -->
+    <div style="background: linear-gradient(45deg, #ff6b6b, #feca57); border-radius: 15px; padding: 15px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center;">
+        <i class="fas fa-info-circle" style="font-size: 24px; color: white; margin-right: 15px;"></i>
+        <div>
+          <div style="color: white; font-weight: bold;">Withdrawal Information</div>
+          <div style="color: rgba(255,255,255,0.9); font-size: 12px;">• Processing time: 24-48 hours</div>
+          <div style="color: rgba(255,255,255,0.9); font-size: 12px;">• No withdrawal charges</div>
+          <div style="color: rgba(255,255,255,0.9); font-size: 12px;">• Minimum withdrawal: ₹500</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button onclick="processWithdrawal()" class="btn" style="margin-bottom: 20px;">
+      <i class="fas fa-hand-holding-usd"></i> Request Withdrawal
+    </button>
+
+    <!-- Recent Withdrawals -->
+    <div style="background: rgba(255,255,255,0.1); border-radius: 20px; padding: 15px;">
+      <h3 style="color: white; margin-bottom: 15px;">Recent Withdrawals</h3>
+      <div id="recentWithdrawals">
+        <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">
+          <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="location.href='dashboard.html'">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" onclick="location.href='products.html'">
+        <i class="fas fa-box"></i>
+        <span>Products</span>
+      </div>
+      <div class="nav-item" onclick="location.href='promotion.html'">
+        <i class="fas fa-bullhorn"></i>
+        <span>Promotion</span>
+      </div>
+      <div class="nav-item" onclick="location.href='profile.html'">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let userWallet = 0;
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        currentUser = user;
+        loadUserData(user.uid);
+        loadRecentWithdrawals(user.uid);
+      }
+    });
+    
+    function loadUserData(userId) {
+      firebase.firestore().collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists) {
+            userWallet = doc.data().wallet || 0;
+            document.getElementById('availableBalance').textContent = '₹' + userWallet;
+          }
+        });
+    }
+    
+    function loadRecentWithdrawals(userId) {
+      const db = firebase.firestore();
+      db.collection('withdrawals')
+        .where('userId', '==', userId)
+        .orderBy('timestamp', 'desc')
+        .limit(5)
+        .get()
+        .then((snapshot) => {
+          const container = document.getElementById('recentWithdrawals');
+          
+          if (snapshot.empty) {
+            container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">No withdrawals yet</div>';
+            return;
+          }
+          
+          let html = '';
+          snapshot.forEach((doc) => {
+            const withdrawal = doc.data();
+            const date = withdrawal.timestamp ? new Date(withdrawal.timestamp.toDate()).toLocaleDateString() : 'N/A';
+            html += `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div>
+                  <div style="color: white; font-weight: bold;">₹${withdrawal.amount}</div>
+                  <div style="color: rgba(255,255,255,0.5); font-size: 11px;">${date}</div>
+                </div>
+                <span class="badge ${withdrawal.status}">${withdrawal.status}</span>
+              </div>
+            `;
+          });
+          container.innerHTML = html;
+        });
+    }
+    
+    function setWithdrawAmount(amount) {
+      document.getElementById('withdrawAmount').value = amount;
+    }
+    
+    function toggleMethodFields() {
+      const method = document.getElementById('withdrawMethod').value;
+      
+      document.getElementById('bankFields').style.display = method === 'bank' ? 'block' : 'none';
+      document.getElementById('upiFields').style.display = method === 'upi' ? 'block' : 'none';
+      document.getElementById('paytmFields').style.display = method === 'paytm' ? 'block' : 'none';
+    }
+    
+    function processWithdrawal() {
+      const amount = parseFloat(document.getElementById('withdrawAmount').value);
+      const method = document.getElementById('withdrawMethod').value;
+      
+      // Validation
+      if (!amount || amount < 500) {
+        alert('Please enter a valid amount (minimum ₹500)');
+        return;
+      }
+      
+      if (amount > userWallet) {
+        alert('Insufficient balance!');
+        return;
+      }
+      
+      // Get payment details based on method
+      let paymentDetails = {};
+      if (method === 'bank') {
+        if (!document.getElementById('accountHolder').value || !document.getElementById('accountNumber').value || 
+            !document.getElementById('ifscCode').value || !document.getElementById('bankName').value) {
+          alert('Please fill all bank details');
+          return;
+        }
+        paymentDetails = {
+          accountHolder: document.getElementById('accountHolder').value,
+          accountNumber: document.getElementById('accountNumber').value,
+          ifscCode: document.getElementById('ifscCode').value,
+          bankName: document.getElementById('bankName').value
+        };
+      } else if (method === 'upi') {
+        if (!document.getElementById('upiId').value) {
+          alert('Please enter UPI ID');
+          return;
+        }
+        paymentDetails = {
+          upiId: document.getElementById('upiId').value
+        };
+      } else if (method === 'paytm') {
+        if (!document.getElementById('paytmNumber').value) {
+          alert('Please enter Paytm number');
+          return;
+        }
+        paymentDetails = {
+          paytmNumber: document.getElementById('paytmNumber').value
+        };
+      }
+      
+      const remarks = document.getElementById('remarks').value;
+      
+      // Create withdrawal request
+      const db = firebase.firestore();
+      db.collection('withdrawals').add({
+        userId: currentUser.uid,
+        amount: amount,
+        method: method,
+        paymentDetails: paymentDetails,
+        remarks: remarks,
+        status: 'pending',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        // Create transaction record
+        return db.collection('transactions').add({
+          userId: currentUser.uid,
+          type: 'withdrawal',
+          amount: amount,
+          status: 'pending',
+          description: `Withdrawal request via ${method.toUpperCase()}`,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }).then(() => {
+        alert('Withdrawal request submitted successfully! It will be processed within 24-48 hours.');
+        window.location.href = 'transactions.html';
+      }).catch((error) => {
+        alert('Error: ' + error.message);
+      });
+    }
+  </script>
+</body>
+            </html>
