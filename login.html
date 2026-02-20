@@ -6,72 +6,257 @@
   <title>Login - Cadbury Dairy Milk</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <style>
+    .error-message {
+      color: #ff6b6b;
+      font-size: 14px;
+      margin-top: 5px;
+      display: none;
+    }
+    .success-message {
+      color: #4caf50;
+      font-size: 14px;
+      margin-top: 5px;
+      display: none;
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
   <div class="mobile-container">
     <div class="form-container">
-      <h1 class="form-title">
-        <i class="fas fa-candy-cane"></i> Cadbury
-      </h1>
+      <div style="text-align: center; margin-bottom: 20px;">
+        <i class="fas fa-candy-cane" style="font-size: 60px; color: white; text-shadow: 0 0 20px rgba(255,255,255,0.5);"></i>
+        <h1 style="color: white; font-size: 28px; margin-top: 10px;">Welcome Back</h1>
+        <p style="color: rgba(255,255,255,0.7);">Login to your account</p>
+      </div>
       
-      <form id="loginForm" onsubmit="event.preventDefault(); loginUser();">
+      <!-- Error/Success Messages -->
+      <div id="errorMessage" class="error-message" style="text-align: center; margin-bottom: 15px;"></div>
+      <div id="successMessage" class="success-message" style="text-align: center; margin-bottom: 15px;"></div>
+      
+      <form id="loginForm" onsubmit="return false;">
         <div class="form-group">
-          <label>Email</label>
+          <label><i class="fas fa-envelope"></i> Email Address</label>
           <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
         </div>
         
         <div class="form-group">
-          <label>Password</label>
+          <label><i class="fas fa-lock"></i> Password</label>
           <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
         </div>
         
-        <button type="submit" class="btn">
+        <div style="text-align: right; margin-bottom: 20px;">
+          <a href="#" onclick="forgotPassword()" style="color: rgba(255,255,255,0.8); font-size: 13px;">Forgot Password?</a>
+        </div>
+        
+        <button type="button" id="loginBtn" class="btn" onclick="loginUser()">
           <i class="fas fa-sign-in-alt"></i> Login
         </button>
         
-        <a href="#" class="link" onclick="forgotPassword()">Forgot Password?</a>
-        <a href="register.html" class="link">Don't have an account? Register</a>
+        <p style="color: rgba(255,255,255,0.6); text-align: center; margin: 20px 0;">Don't have an account?</p>
+        
+        <button type="button" class="btn btn-secondary" onclick="location.href='register.html'">
+          <i class="fas fa-user-plus"></i> Create Account
+        </button>
       </form>
     </div>
   </div>
 
+  <!-- Firebase Configuration -->
   <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4nik_P57h9Ks8ryj0pG2xYNX-ePXKXtY",
+      authDomain: "shoes-shopping-app-6a1d3.firebaseapp.com",
+      databaseURL: "https://shoes-shopping-app-6a1d3-default-rtdb.firebaseio.com",
+      projectId: "shoes-shopping-app-6a1d3",
+      storageBucket: "shoes-shopping-app-6a1d3.appspot.com",
+      messagingSenderId: "816065792865",
+      appId: "1:816065792865:web:b1d58fab547f98e4961320",
+      measurementId: "G-7BVQVYSMDF"
+    };
+
+    // Initialize Firebase
+    try {
+      firebase.initializeApp(firebaseConfig);
+      console.log('Firebase initialized successfully');
+    } catch (error) {
+      console.error('Firebase initialization error:', error);
+      document.getElementById('errorMessage').style.display = 'block';
+      document.getElementById('errorMessage').textContent = 'Failed to initialize app. Please refresh.';
+    }
+
+    // Check if user is already logged in
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        console.log('User already logged in:', user.email);
+        // Redirect to dashboard
+        window.location.href = 'dashboard.html';
+      }
+    });
+
+    // Login function
     function loginUser() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+      console.log('Login function called');
       
+      // Get form elements
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const loginBtn = document.getElementById('loginBtn');
+      const errorDiv = document.getElementById('errorMessage');
+      const successDiv = document.getElementById('successMessage');
+      
+      // Hide previous messages
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+      
+      // Validate inputs
+      if (!email || !password) {
+        errorDiv.textContent = 'Please enter both email and password';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      if (password.length < 6) {
+        errorDiv.textContent = 'Password must be at least 6 characters';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      // Show loading state
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span class="loading-spinner"></span> Logging in...';
+      
+      console.log('Attempting login with email:', email);
+      
+      // Attempt login
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
+          console.log('Login successful:', userCredential.user.email);
+          
+          // Show success message
+          successDiv.textContent = 'Login successful! Redirecting...';
+          successDiv.style.display = 'block';
+          
+          // Update last login
+          return firebase.firestore().collection('users').doc(userCredential.user.uid).update({
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(err => {
+            console.log('Non-critical: Could not update last login', err);
+          }).then(() => {
+            return userCredential;
+          });
+        })
+        .then((userCredential) => {
           // Check if user is admin
-          firebase.firestore().collection('users').doc(userCredential.user.uid).get()
+          return firebase.firestore().collection('users').doc(userCredential.user.uid).get()
             .then((doc) => {
-              if (doc.exists && doc.data().role === 'admin') {
-                window.location.href = 'admin/dashboard.html';
+              if (doc.exists) {
+                const userData = doc.data();
+                console.log('User role:', userData.role);
+                
+                // Redirect based on role
+                setTimeout(() => {
+                  if (userData.role === 'admin' || userData.role === 'super_admin') {
+                    window.location.href = 'admin/index.html';
+                  } else {
+                    window.location.href = 'dashboard.html';
+                  }
+                }, 1500);
               } else {
-                window.location.href = 'dashboard.html';
+                // New user without profile
+                console.log('User document not found');
+                setTimeout(() => {
+                  window.location.href = 'dashboard.html';
+                }, 1500);
               }
             });
         })
         .catch((error) => {
-          alert(error.message);
+          console.error('Login error:', error);
+          
+          // Reset button
+          loginBtn.disabled = false;
+          loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+          
+          // Show error message
+          let errorMessage = 'Login failed. ';
+          switch (error.code) {
+            case 'auth/user-not-found':
+              errorMessage += 'No account found with this email.';
+              break;
+            case 'auth/wrong-password':
+              errorMessage += 'Incorrect password.';
+              break;
+            case 'auth/invalid-email':
+              errorMessage += 'Invalid email format.';
+              break;
+            case 'auth/user-disabled':
+              errorMessage += 'This account has been disabled.';
+              break;
+            case 'auth/too-many-requests':
+              errorMessage += 'Too many failed attempts. Try again later.';
+              break;
+            default:
+              errorMessage += error.message;
+          }
+          
+          errorDiv.textContent = errorMessage;
+          errorDiv.style.display = 'block';
         });
     }
 
+    // Forgot password function
     function forgotPassword() {
-      const email = prompt('Enter your email address:');
-      if (email) {
-        firebase.auth().sendPasswordResetEmail(email)
-          .then(() => {
-            alert('Password reset email sent!');
-          })
-          .catch((error) => {
-            alert(error.message);
-          });
-      }
+      const email = prompt('Enter your email address to reset password:');
+      if (!email) return;
+      
+      firebase.auth().sendPasswordResetEmail(email)
+        .then(() => {
+          alert('Password reset email sent! Please check your inbox.');
+        })
+        .catch((error) => {
+          alert('Error: ' + error.message);
+        });
     }
+
+    // Test Firebase connection
+    function testFirebaseConnection() {
+      console.log('Testing Firebase connection...');
+      firebase.firestore().collection('test').doc('test').get()
+        .then(() => {
+          console.log('Firebase connection successful');
+        })
+        .catch((error) => {
+          console.error('Firebase connection failed:', error);
+        });
+    }
+
+    // Run connection test on load
+    window.addEventListener('load', () => {
+      testFirebaseConnection();
+    });
   </script>
 </body>
 </html>
