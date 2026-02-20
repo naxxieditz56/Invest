@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div class="admin-logo">
+        <i class="fas fa-crown"></i> Admin Panel
+      </div>
+      
+      <div class="admin-menu">
+        <a href="dashboard.html" class="menu-item active">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"></i> Users
+        </a>
+        <a href="products.html" class="menu-item">
+          <i class="fas fa-box"></i> Products
+        </a>
+        <a href="investments.html" class="menu-item">
+          <i class="fas fa-chart-line"></i> Investments
+        </a>
+        <a href="transactions.html" class="menu-item">
+          <i class="fas fa-exchange-alt"></i> Transactions
+        </a>
+        <a href="referrals.html" class="menu-item">
+          <i class="fas fa-sitemap"></i> Referrals
+        </a>
+        <a href="checkin.html" class="menu-item">
+          <i class="fas fa-calendar-check"></i> Check-In
+        </a>
+        <a href="notifications.html" class="menu-item">
+          <i class="fas fa-bell"></i> Notifications
+        </a>
+        <a href="security.html" class="menu-item">
+          <i class="fas fa-shield-alt"></i> Security
+        </a>
+        <a href="roles.html" class="menu-item">
+          <i class="fas fa-user-tag"></i> Roles
+        </a>
+      </div>
+      
+      <div class="admin-footer">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span id="adminName">Admin</span>
+        </div>
+        <button onclick="logout()" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+      <div class="admin-header">
+        <h1>Dashboard</h1>
+        <div class="header-actions">
+          <span class="date" id="currentDate"></span>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Total Users</h3>
+            <div class="stat-value" id="totalUsers">0</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Active Users</h3>
+            <div class="stat-value" id="activeUsers">0</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-rupee-sign"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Total Investment</h3>
+            <div class="stat-value" id="totalInvestment">₹0</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-hand-holding-usd"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Total Withdrawals</h3>
+            <div class="stat-value" id="totalWithdrawals">₹0</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Pending Approvals</h3>
+            <div class="stat-value" id="pendingApprovals">0</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Daily Earnings</h3>
+            <div class="stat-value" id="dailyEarnings">₹0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>User Growth</h3>
+          <canvas id="userChart"></canvas>
+        </div>
+        
+        <div class="chart-card">
+          <h3>Investment Overview</h3>
+          <canvas id="investmentChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="recent-section">
+        <h3>Recent Transactions</h3>
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="recentTransactions">
+              <tr>
+                <td colspan="6" class="text-center">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Check admin authentication
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        firebase.firestore().collection('users').doc(user.uid).get()
+          .then((doc) => {
+            if (!doc.exists || doc.data().role !== 'admin') {
+              window.location.href = '../dashboard.html';
+            } else {
+              loadDashboardData();
+              document.getElementById('adminName').textContent = doc.data().username || 'Admin';
+            }
+          });
+      }
+    });
+
+    // Set current date
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    function loadDashboardData() {
+      const db = firebase.firestore();
+      
+      // Load total users
+      db.collection('users').get()
+        .then((snapshot) => {
+          document.getElementById('totalUsers').textContent = snapshot.size;
+          
+          // Count active users (users with investments)
+          let activeCount = 0;
+          snapshot.forEach((doc) => {
+            if (doc.data().investments && doc.data().investments.length > 0) {
+              activeCount++;
+            }
+          });
+          document.getElementById('activeUsers').textContent = activeCount;
+        });
+
+      // Load investment data
+      db.collection('investments').get()
+        .then((snapshot) => {
+          let total = 0;
+          snapshot.forEach((doc) => {
+            total += doc.data().amount || 0;
+          });
+          document.getElementById('totalInvestment').textContent = '₹' + total;
+        });
+
+      // Load withdrawal data
+      db.collection('withdrawals').where('status', '==', 'approved').get()
+        .then((snapshot) => {
+          let total = 0;
+          snapshot.forEach((doc) => {
+            total += doc.data().amount || 0;
+          });
+          document.getElementById('totalWithdrawals').textContent = '₹' + total;
+        });
+
+      // Count pending approvals
+      Promise.all([
+        db.collection('withdrawals').where('status', '==', 'pending').get(),
+        db.collection('recharges').where('status', '==', 'pending').get()
+      ]).then(([withdrawals, recharges]) => {
+        document.getElementById('pendingApprovals').textContent = 
+          withdrawals.size + recharges.size;
+      });
+
+      // Load recent transactions
+      db.collection('transactions')
+        .orderBy('timestamp', 'desc')
+        .limit(10)
+        .get()
+        .then((snapshot) => {
+          const tbody = document.getElementById('recentTransactions');
+          tbody.innerHTML = '';
+          
+          snapshot.forEach((doc) => {
+            const trans = doc.data();
+            tbody.innerHTML += `
+              <tr>
+                <td>${trans.userName || 'User'}</td>
+                <td><span class="badge ${trans.type}">${trans.type}</span></td>
+                <td>₹${trans.amount}</td>
+                <td><span class="badge ${trans.status}">${trans.status}</span></td>
+                <td>${new Date(trans.timestamp?.toDate()).toLocaleDateString()}</td>
+                <td>
+                  <button onclick="viewTransaction('${doc.id}')" class="btn-small">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+        });
+
+      // Initialize charts
+      initCharts();
+    }
+
+    function initCharts() {
+      // User Growth Chart
+      const ctx = document.getElementById('userChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'New Users',
+            data: [12, 19, 3, 5, 2, 3],
+            borderColor: '#4facfe',
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+
+      // Investment Chart
+      const ctx2 = document.getElementById('investmentChart').getContext('2d');
+      new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: ['Active', 'Completed', 'Pending'],
+          datasets: [{
+            data: [300, 50, 100],
+            backgroundColor: ['#4caf50', '#ff9800', '#f44336']
+          }]
+        }
+      });
+    }
+
+    function viewTransaction(id) {
+      window.location.href = `transactions.html?id=${id}`;
+    }
+
+    function logout() {
+      firebase.auth().signOut()
+        .then(() => {
+          window.location.href = 'login.html';
+        });
+    }
+  </script>
+</body>
+  </html>
