@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referral Program - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="mobile-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo">
+        <i class="fas fa-users"></i> Referral
+      </div>
+      <div class="top-icons">
+        <i class="fas fa-question-circle"></i>
+      </div>
+    </div>
+
+    <!-- Referral Stats -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 25px; padding: 20px; margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; color: white;">
+        <div style="text-align: center;">
+          <div style="font-size: 12px; opacity: 0.8;">Total Referrals</div>
+          <div style="font-size: 32px; font-weight: bold;" id="totalReferrals">0</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 12px; opacity: 0.8;">Total Earnings</div>
+          <div style="font-size: 32px; font-weight: bold;" id="referralEarnings">₹0</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 12px; opacity: 0.8;">Level 1</div>
+          <div style="font-size: 24px; font-weight: bold;" id="level1Count">0</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 12px; opacity: 0.8;">Level 2</div>
+          <div style="font-size: 24px; font-weight: bold;" id="level2Count">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Referral Code Card -->
+    <div class="promotion-card" style="margin-bottom: 20px;">
+      <i class="fas fa-gift" style="font-size: 40px; margin-bottom: 10px;"></i>
+      <h3 style="margin-bottom: 10px;">Your Referral Code</h3>
+      <div class="promotion-code" id="referralCode">CAD12345</div>
+      <p style="margin: 10px 0; font-size: 14px;">Share this code with friends and earn rewards!</p>
+      <div class="share-buttons">
+        <div class="share-btn whatsapp" onclick="shareViaWhatsApp()">
+          <i class="fab fa-whatsapp"></i>
+        </div>
+        <div class="share-btn telegram" onclick="shareViaTelegram()">
+          <i class="fab fa-telegram"></i>
+        </div>
+        <div class="share-btn facebook" onclick="shareViaFacebook()">
+          <i class="fab fa-facebook"></i>
+        </div>
+        <div class="share-btn" style="background: #333;" onclick="copyReferralCode()">
+          <i class="fas fa-copy"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Referral Levels Info -->
+    <div style="background: rgba(255,255,255,0.15); border-radius: 20px; padding: 15px; margin-bottom: 20px;">
+      <h3 style="color: white; margin-bottom: 15px;">Referral Bonus Structure</h3>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+        <div style="text-align: center;">
+          <div style="background: linear-gradient(45deg, #4facfe, #00f2fe); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
+            <i class="fas fa-star" style="color: white;"></i>
+          </div>
+          <div style="color: white; font-size: 12px;">Level 1</div>
+          <div style="color: #ffd700; font-weight: bold;">5%</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="background: linear-gradient(45deg, #ff6b6b, #feca57); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
+            <i class="fas fa-star" style="color: white;"></i>
+          </div>
+          <div style="color: white; font-size: 12px;">Level 2</div>
+          <div style="color: #ffd700; font-weight: bold;">3%</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="background: linear-gradient(45deg, #a8e063, #56ab2f); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
+            <i class="fas fa-star" style="color: white;"></i>
+          </div>
+          <div style="color: white; font-size: 12px;">Level 3</div>
+          <div style="color: #ffd700; font-weight: bold;">1%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Referral Tree -->
+    <div class="referral-tree">
+      <h3 style="color: white; margin-bottom: 15px;">Your Referral Network</h3>
+      <div id="referralTree">
+        <!-- Referral levels will be loaded here -->
+        <div class="text-center" style="color: rgba(255,255,255,0.6); padding: 20px;">
+          <i class="fas fa-spinner fa-spin fa-2x"></i>
+          <p>Loading referral tree...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="location.href='dashboard.html'">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" onclick="location.href='products.html'">
+        <i class="fas fa-box"></i>
+        <span>Products</span>
+      </div>
+      <div class="nav-item active" onclick="location.href='promotion.html'">
+        <i class="fas fa-bullhorn"></i>
+        <span>Promotion</span>
+      </div>
+      <div class="nav-item" onclick="location.href='profile.html'">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        currentUser = user;
+        loadReferralData(user.uid);
+      }
+    });
+    
+    function loadReferralData(userId) {
+      const db = firebase.firestore();
+      
+      // Get user data
+      db.collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists) {
+            const userData = doc.data();
+            document.getElementById('referralCode').textContent = userData.referralCode || 'CAD' + userId.slice(0,5).toUpperCase();
+            
+            // Load referrals
+            loadReferrals(userId);
+          }
+        });
+      
+      // Get referral earnings
+      db.collection('transactions')
+        .where('userId', '==', userId)
+        .where('type', '==', 'referral_bonus')
+        .get()
+        .then((snapshot) => {
+          let total = 0;
+          snapshot.forEach((doc) => {
+            total += doc.data().amount;
+          });
+          document.getElementById('referralEarnings').textContent = '₹' + total;
+        });
+    }
+    
+    async function loadReferrals(userId) {
+      const db = firebase.firestore();
+      const container = document.getElementById('referralTree');
+      
+      // Get level 1 referrals
+      const level1Snapshot = await db.collection('users')
+        .where('referredBy', '==', userId)
+        .get();
+      
+      document.getElementById('totalReferrals').textContent = level1Snapshot.size;
+      document.getElementById('level1Count').textContent = level1Snapshot.size;
+      
+      let html = '';
+      
+      if (level1Snapshot.empty) {
+        html = `
+          <div style="text-align: center; padding: 30px; color: rgba(255,255,255,0.6);">
+            <i class="fas fa-users" style="font-size: 50px; margin-bottom: 15px;"></i>
+            <p>No referrals yet. Share your code to earn!</p>
+          </div>
+        `;
+      } else {
+        html = '<div class="referral-level">';
+        html += '<div class="level-title">Level 1 (5%)</div>';
+        
+        let level2Count = 0;
+        
+        for (const doc of level1Snapshot.docs) {
+          const referral = doc.data();
+          html += `
+            <div class="referral-user">
+              <div class="referral-avatar">${referral.username?.charAt(0) || 'U'}</div>
+              <div class="referral-info">
+                <h4>${referral.username || 'User'}</h4>
+                <p>Joined: ${referral.createdAt ? new Date(referral.createdAt.toDate()).toLocaleDateString() : 'N/A'}</p>
+              </div>
+              <div class="referral-commission">₹${referral.totalInvestment ? (referral.totalInvestment * 0.05).toFixed(0) : 0}</div>
+            </div>
+          `;
+          
+          // Load level 2 referrals
+          const level2Snapshot = await db.collection('users')
+            .where('referredBy', '==', doc.id)
+            .get();
+          
+          level2Count += level2Snapshot.size;
+          
+          if (!level2Snapshot.empty) {
+            for (const level2Doc of level2Snapshot.docs) {
+              const level2 = level2Doc.data();
+              html += `
+                <div class="referral-user" style="margin-left: 30px; opacity: 0.9;">
+                  <div class="referral-avatar" style="background: linear-gradient(45deg, #ff6b6b, #feca57);">${level2.username?.charAt(0) || 'U'}</div>
+                  <div class="referral-info">
+                    <h4>${level2.username || 'User'}</h4>
+                    <p>Level 2</p>
+                  </div>
+                  <div class="referral-commission">₹${level2.totalInvestment ? (level2.totalInvestment * 0.03).toFixed(0) : 0}</div>
+                </div>
+              `;
+            }
+          }
+        }
+        
+        html += '</div>';
+        document.getElementById('level2Count').textContent = level2Count;
+      }
+      
+      container.innerHTML = html;
+    }
+    
+    function copyReferralCode() {
+      const code = document.getElementById('referralCode').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        alert('Referral code copied!');
+      });
+    }
+    
+    function shareViaWhatsApp() {
+      const code = document.getElementById('referralCode').textContent;
+      const text = `Join Cadbury Dairy Milk investment platform and earn daily profits! Use my referral code: ${code} - https://cadbury.com/register`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+    
+    function shareViaTelegram() {
+      const code = document.getElementById('referralCode').textContent;
+      const text = `Join Cadbury Dairy Milk investment platform and earn daily profits! Use my referral code: ${code} - https://cadbury.com/register`;
+      window.open(`https://t.me/share/url?url=${encodeURIComponent('https://cadbury.com')}&text=${encodeURIComponent(text)}`, '_blank');
+    }
+    
+    function shareViaFacebook() {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://cadbury.com')}`, '_blank');
+    }
+  </script>
+</body>
+  </html>
