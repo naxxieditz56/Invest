@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cadbury Dairy Milk - Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+</head>
+<body>
+  <div class="mobile-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo">
+        <i class="fas fa-candy-cane"></i> Cadbury
+      </div>
+      <div class="top-icons">
+        <i class="fas fa-globe"></i>
+        <i class="fas fa-bell"></i>
+      </div>
+    </div>
+
+    <!-- Banner -->
+    <div class="banner">
+      <img src="https://via.placeholder.com/60x60/4facfe/ffffff?text=DM" alt="Dairy Milk">
+      <img src="https://via.placeholder.com/60x60/00f2fe/ffffff?text=DM" alt="Daily Milk">
+      <img src="https://via.placeholder.com/60x60/ff6b6b/ffffff?text=CDM" alt="Cadbury">
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <div class="action-btn" onclick="location.href='checkin.html'">
+        <i class="fas fa-calendar-check"></i>
+        <span>Check-In</span>
+      </div>
+      <div class="action-btn" onclick="location.href='referral.html'">
+        <i class="fas fa-users"></i>
+        <span>Referral</span>
+      </div>
+      <div class="action-btn" onclick="location.href='recharge.html'">
+        <i class="fas fa-wallet"></i>
+        <span>Recharge</span>
+      </div>
+      <div class="action-btn" onclick="location.href='withdraw.html'">
+        <i class="fas fa-hand-holding-usd"></i>
+        <span>Withdraw</span>
+      </div>
+    </div>
+
+    <!-- New Product Card -->
+    <div class="product-card">
+      <div class="product-badge">
+        <i class="fas fa-star"></i> New Product
+      </div>
+      <img src="https://via.placeholder.com/300x150/ff6b6b/ffffff?text=Dairy+Milk+1" alt="Dairy Milk 1" class="product-image">
+      <h2 class="product-name">Dairymilk 1</h2>
+      
+      <div class="product-stats">
+        <div class="stat-item">
+          <div class="stat-label">Daily Profit</div>
+          <div class="stat-value">₹ 3250</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Income</div>
+          <div class="stat-value">₹ 6500</div>
+        </div>
+      </div>
+
+      <div class="days-badge">
+        <i class="far fa-clock"></i> Days: 2
+      </div>
+
+      <div class="price-row">
+        <span class="price">₹800</span>
+        <button class="invest-btn" onclick="investNow()">Invest</button>
+      </div>
+
+      <div class="user-info">
+        <span><i class="fas fa-user"></i> User 5541 ******</span>
+        <span><i class="far fa-calendar-alt"></i> 2026-02-01 11:57</span>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="location.href='dashboard.html'">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" onclick="location.href='products.html'">
+        <i class="fas fa-box"></i>
+        <span>Products</span>
+      </div>
+      <div class="nav-item" onclick="location.href='promotion.html'">
+        <i class="fas fa-bullhorn"></i>
+        <span>Promotion</span>
+      </div>
+      <div class="nav-item" onclick="location.href='profile.html'">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Check authentication
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        // Load user data
+        loadUserData(user.uid);
+      }
+    });
+
+    function loadUserData(userId) {
+      const db = firebase.firestore();
+      db.collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists) {
+            const userData = doc.data();
+            // Update UI with user data
+            document.querySelector('.user-info span:first-child').innerHTML = 
+              `<i class="fas fa-user"></i> ${userData.username || 'User'} ${userData.userId || '****'}`;
+          }
+        })
+        .catch((error) => {
+          console.log('Error loading user data:', error);
+        });
+    }
+
+    function investNow() {
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      // Check if user has sufficient balance
+      const db = firebase.firestore();
+      db.collection('users').doc(user.uid).get()
+        .then((doc) => {
+          if (doc.exists) {
+            const balance = doc.data().wallet || 0;
+            if (balance >= 800) {
+              // Proceed with investment
+              window.location.href = 'product-details.html?id=1';
+            } else {
+              alert('Insufficient balance! Please recharge.');
+              window.location.href = 'recharge.html';
+            }
+          }
+        });
+    }
+  </script>
+</body>
+                                 </html>
