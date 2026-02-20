@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    }
+    .admin-login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .admin-login-box {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px 30px;
+      width: 100%;
+      max-width: 400px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .admin-logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .admin-logo i {
+      font-size: 60px;
+      color: #ffd700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    .admin-logo h2 {
+      color: white;
+      margin-top: 10px;
+      font-size: 24px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      color: rgba(255, 255, 255, 0.8);
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      color: white;
+      font-size: 16px;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: #4facfe;
+    }
+    .btn-login {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(45deg, #4facfe, #00f2fe);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+    }
+    .security-note {
+      text-align: center;
+      margin-top: 20px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 12px;
+    }
+    .security-note i {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-login-container">
+    <div class="admin-login-box">
+      <div class="admin-logo">
+        <i class="fas fa-crown"></i>
+        <h2>Admin Panel</h2>
+        <p style="color: rgba(255,255,255,0.6); font-size: 14px;">Cadbury Dairy Milk</p>
+      </div>
+      
+      <form onsubmit="event.preventDefault(); adminLogin();">
+        <div class="form-group">
+          <label><i class="fas fa-envelope"></i> Email</label>
+          <input type="email" id="email" class="form-control" placeholder="admin@cadbury.com" required>
+        </div>
+        
+        <div class="form-group">
+          <label><i class="fas fa-lock"></i> Password</label>
+          <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+        </div>
+        
+        <div class="form-group" style="display: flex; align-items: center;">
+          <input type="checkbox" id="remember" style="margin-right: 10px;">
+          <label style="margin-bottom: 0;">Remember me</label>
+        </div>
+        
+        <button type="submit" class="btn-login">
+          <i class="fas fa-sign-in-alt"></i> Login to Admin
+        </button>
+      </form>
+      
+      <div class="security-note">
+        <i class="fas fa-shield-alt"></i> Secure Admin Access Only
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function adminLogin() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      // Show loading
+      const btn = document.querySelector('.btn-login');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+      btn.disabled = true;
+      
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          // Check if user is admin
+          return firebase.firestore().collection('users').doc(userCredential.user.uid).get();
+        })
+        .then((doc) => {
+          if (doc.exists && doc.data().role === 'admin') {
+            window.location.href = 'index.html';
+          } else {
+            // Not admin, sign out
+            firebase.auth().signOut();
+            alert('Access denied! Admin privileges required.');
+            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login to Admin';
+            btn.disabled = false;
+          }
+        })
+        .catch((error) => {
+          alert('Login failed: ' + error.message);
+          btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login to Admin';
+          btn.disabled = false;
+        });
+    }
+  </script>
+</body>
+</html>
