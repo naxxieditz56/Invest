@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Management - Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div class="admin-logo">
+        <i class="fas fa-crown"></i> Admin Panel
+      </div>
+      
+      <div class="admin-menu">
+        <a href="index.html" class="menu-item">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"></i> Users
+        </a>
+        <a href="products.html" class="menu-item">
+          <i class="fas fa-box"></i> Products
+        </a>
+        <a href="investments.html" class="menu-item">
+          <i class="fas fa-chart-line"></i> Investments
+        </a>
+        <a href="transactions.html" class="menu-item active">
+          <i class="fas fa-exchange-alt"></i> Transactions
+        </a>
+        <a href="referrals.html" class="menu-item">
+          <i class="fas fa-sitemap"></i> Referrals
+        </a>
+        <a href="checkin.html" class="menu-item">
+          <i class="fas fa-calendar-check"></i> Check-In
+        </a>
+        <a href="notifications.html" class="menu-item">
+          <i class="fas fa-bell"></i> Notifications
+        </a>
+        <a href="security.html" class="menu-item">
+          <i class="fas fa-shield-alt"></i> Security
+        </a>
+        <a href="roles.html" class="menu-item">
+          <i class="fas fa-user-tag"></i> Roles
+        </a>
+      </div>
+      
+      <div class="admin-footer">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span id="adminName">Admin</span>
+        </div>
+        <button onclick="logout()" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+      <div class="admin-header">
+        <h1>Transaction Management</h1>
+        <div class="header-actions">
+          <button class="btn" onclick="exportTransactions()">
+            <i class="fas fa-download"></i> Export CSV
+          </button>
+          <button class="btn btn-secondary" onclick="showDateRangeModal()">
+            <i class="fas fa-calendar-alt"></i> Date Range
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+        <div style="background: linear-gradient(45deg, #4facfe, #00f2fe); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Total Transactions</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="totalTransactions">0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #4caf50, #8bc34a); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Total Volume</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="totalVolume">₹0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #ff9800, #f57c00); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Pending</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="pendingCount">0</div>
+        </div>
+        <div style="background: linear-gradient(45deg, #f44336, #d32f2f); padding: 15px; border-radius: 10px;">
+          <div style="color: white; font-size: 12px;">Failed</div>
+          <div style="color: white; font-size: 24px; font-weight: bold;" id="failedCount">0</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <select id="typeFilter" class="form-control" style="max-width: 150px;">
+          <option value="all">All Types</option>
+          <option value="recharge">Recharge</option>
+          <option value="withdrawal">Withdrawal</option>
+          <option value="investment">Investment</option>
+          <option value="profit">Profit</option>
+          <option value="referral_bonus">Referral</option>
+          <option value="checkin_bonus">Check-In</option>
+        </select>
+        
+        <select id="statusFilter" class="form-control" style="max-width: 150px;">
+          <option value="all">All Status</option>
+          <option value="completed">Completed</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed</option>
+        </select>
+        
+        <input type="text" id="searchUser" class="form-control" placeholder="Search by user ID or email..." style="flex: 1;">
+        
+        <input type="date" id="startDate" class="form-control" style="max-width: 150px;">
+        <input type="date" id="endDate" class="form-control" style="max-width: 150px;">
+        
+        <button onclick="applyFilters()" class="btn-small">
+          <i class="fas fa-filter"></i> Apply
+        </button>
+        <button onclick="resetFilters()" class="btn-small">
+          <i class="fas fa-undo"></i> Reset
+        </button>
+      </div>
+
+      <!-- Transactions Table -->
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Date/Time</th>
+              <th>User</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="transactionsTable">
+            <tr>
+              <td colspan="7" class="text-center">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" style="margin-top: 20px; text-align: center;">
+        <button class="btn-small" onclick="prevPage()"><i class="fas fa-chevron-left"></i></button>
+        <span id="pageInfo" style="margin: 0 15px; color: white;">Page 1</span>
+        <button class="btn-small" onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction Details Modal -->
+  <div id="transactionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Transaction Details</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      
+      <div id="transactionDetails" style="padding: 20px;">
+        <!-- Details will be loaded here -->
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button onclick="approveTransaction()" class="btn" style="flex: 1; background: #4caf50;">Approve</button>
+        <button onclick="rejectTransaction()" class="btn" style="flex: 1; background: #f44336;">Reject</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Date Range Modal -->
+  <div id="dateRangeModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Select Date Range</h2>
+        <button class="close-btn" onclick="closeDateRangeModal()">&times;</button>
+      </div>
+      
+      <form onsubmit="event.preventDefault(); applyDateRange();">
+        <div class="form-group">
+          <label>From Date</label>
+          <input type="date" id="rangeStart" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+          <label>To Date</label>
+          <input type="date" id="rangeEnd" class="form-control" required>
+        </div>
+        
+        <button type="submit" class="btn">Generate Report</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let currentPage = 1;
+    const itemsPerPage = 20;
+    let lastVisible = null;
+    let currentTransactionId = null;
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        checkAdminStatus(user.uid);
+      }
+    });
+    
+    function checkAdminStatus(userId) {
+      firebase.firestore().collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists && doc.data().role === 'admin') {
+            document.getElementById('adminName').textContent = doc.data().username || 'Admin';
+            loadTransactions();
+            loadSummary();
+          } else {
+            window.location.href = '../dashboard.html';
+          }
+        });
+    }
+    
+    function loadSummary() {
+      const db = firebase.firestore();
+      
+      Promise.all([
+        db.collection('transactions').get(),
+        db.collection('transactions').where('status', '==', 'pending').get(),
+        db.collection('transactions').where('status', '==', 'failed').get()
+      ]).then(([all, pending, failed]) => {
+        document.getElementById('totalTransactions').textContent = all.size;
+        document.getElementById('pendingCount').textContent = pending.size;
+        document.getElementById('failedCount').textContent = failed.size;
+        
+        let totalVolume = 0;
+        all.forEach((doc) => {
+          totalVolume += doc.data().amount || 0;
+        });
+        document.getElementById('totalVolume').textContent = '₹' + totalVolume;
+      });
+    }
+    
+    function loadTransactions() {
+      const db = firebase.firestore();
+      const tbody = document.getElementById('transactionsTable');
+      
+      let query = db.collection('transactions')
+        .orderBy('timestamp', 'desc')
+        .limit(itemsPerPage);
+      
+      // Apply filters
+      const type = document.getElementById('typeFilter').value;
+      const status = document.getElementById('statusFilter').value;
+      const searchUser = document.getElementById('searchUser').value;
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      
+      if (type !== 'all') {
+        query = query.where('type', '==', type);
+      }
+      
+      if (status !== 'all') {
+        query = query.where('status', '==', status);
+      }
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        query = query.where('timestamp', '>=', start);
+      }
+      
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query = query.where('timestamp', '<=', end);
+      }
+      
+      if (currentPage > 1 && lastVisible) {
+        query = query.startAfter(lastVisible);
+      }
+      
+      query.get()
+        .then(async (snapshot) => {
+          lastVisible = snapshot.docs[snapshot.docs.length - 1];
+          tbody.innerHTML = '';
+          
+          for (const doc of snapshot.docs) {
+            const trans = doc.data();
+            
+            // Get user details
+            let userName = 'Unknown';
+            if (trans.userId) {
+              const userDoc = await db.collection('users').doc(trans.userId).get();
+              if (userDoc.exists) {
+                userName = userDoc.data().username || userDoc.data().email || 'Unknown';
+              }
+            }
+            
+            const date = trans.timestamp ? new Date(trans.timestamp.toDate()).toLocaleString() : 'N/A';
+            
+            tbody.innerHTML += `
+              <tr>
+                <td>${date}</td>
+                <td>
+                  <div>${userName}</div>
+                  <small style="color: #999;">${trans.userId ? trans.userId.slice(0, 8) + '...' : ''}</small>
+                </td>
+                <td>
+                  <span class="badge" style="background: ${getTypeColor(trans.type)}">${trans.type}</span>
+                </td>
+                <td>₹${trans.amount}</td>
+                <td><span class="badge ${trans.status}">${trans.status}</span></td>
+                <td>${trans.description || '-'}</td>
+                <td>
+                  <button onclick="viewTransaction('${doc.id}')" class="btn-small">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  ${trans.status === 'pending' ? `
+                    <button onclick="quickApprove('${doc.id}')" class="btn-small" style="background: #4caf50;">
+                      <i class="fas fa-check"></i>
+                    </button>
+                    <button onclick="quickReject('${doc.id}')" class="btn-small" style="background: #f44336;">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  ` : ''}
+                </td>
+              </tr>
+            `;
+          }
+        });
+    }
+    
+    function getTypeColor(type) {
+      const colors = {
+        'recharge': '#4caf50',
+        'withdrawal': '#f44336',
+        'investment': '#ff9800',
+        'profit': '#2196f3',
+        'referral_bonus': '#9c27b0',
+        'checkin_bonus': '#00bcd4'
+      };
+      return colors[type] || '#757575';
+    }
+    
+    function viewTransaction(id) {
+      currentTransactionId = id;
+      const db = firebase.firestore();
+      
+      db.collection('transactions').doc(id).get()
+        .then(async (doc) => {
+          if (!doc.exists) return;
+          
+          const trans = doc.data();
+          
+          // Get user details
+          let userDetails = 'Unknown';
+          if (trans.userId) {
+            const userDoc = await db.collection('users').doc(trans.userId).get();
+            if (userDoc.exists) {
+              const user = userDoc.data();
+              userDetails = `
+                <div><strong>Username:</strong> ${user.username || 'N/A'}</div>
+                <div><strong>Email:</strong> ${user.email || 'N/A'}</div>
+                <div><strong>Phone:</strong> ${user.phone || 'N/A'}</div>
+              `;
+            }
+          }
+          
+          const date = trans.timestamp ? new Date(trans.timestamp.toDate()).toLocaleString() : 'N/A';
+          
+          document.getElementById('transactionDetails').innerHTML = `
+            <div style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+              <h3 style="color: #333; margin-bottom: 10px;">Transaction ID: ${id}</h3>
+              <div><strong>Date:</strong> ${date}</div>
+              <div><strong>Type:</strong> <span class="badge" style="background: ${getTypeColor(trans.type)}">${trans.type}</span></div>
+              <div><strong>Amount:</strong> ₹${trans.amount}</div>
+              <div><strong>Status:</strong> <span class="badge ${trans.status}">${trans.status}</span></div>
+              <div><strong>Description:</strong> ${trans.description || '-'}</div>
+            </div>
+            
+            <div style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+              <h4 style="color: #333; margin-bottom: 10px;">User Information</h4>
+              ${userDetails}
+            </div>
+            
+            <div>
+              <h4 style="color: #333; margin-bottom: 10px;">Additional Details</h4>
+              <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">
+                ${JSON.stringify(trans, null, 2)}
+              </pre>
+            </div>
+          `;
+          
+          document.getElementById('transactionModal').classList.add('active');
+        });
+    }
+    
+    function quickApprove(id) {
+      if (!confirm('Approve this transaction?')) return;
+      
+      const db = firebase.firestore();
+      db.collection('transactions').doc(id).update({
+        status: 'completed'
+      }).then(() => {
+        alert('Transaction approved!');
+        loadTransactions();
+      }).catch((error) => {
+        alert('Error: ' + error.message);
+      });
+    }
+    
+    function quickReject(id) {
+      if (!confirm('Reject this transaction?')) return;
+      
+      const db = firebase.firestore();
+      db.collection('transactions').doc(id).update({
+        status: 'failed'
+      }).then(() => {
+        alert('Transaction rejected!');
+        loadTransactions();
+      }).catch((error) => {
+        alert('Error: ' + error.message);
+      });
+    }
+    
+    function approveTransaction() {
+      if (currentTransactionId) {
+        quickApprove(currentTransactionId);
+        closeModal();
+      }
+    }
+    
+    function rejectTransaction() {
+      if (currentTransactionId) {
+        quickReject(currentTransactionId);
+        closeModal();
+      }
+    }
+    
+    function closeModal() {
+      document.getElementById('transactionModal').classList.remove('active');
+    }
+    
+    function showDateRangeModal() {
+      document.getElementById('dateRangeModal').classList.add('active');
+    }
+    
+    function closeDateRangeModal() {
+      document.getElementById('dateRangeModal').classList.remove('active');
+    }
+    
+    function applyDateRange() {
+      const start = document.getElementById('rangeStart').value;
+      const end = document.getElementById('rangeEnd').value;
+      
+      document.getElementById('startDate').value = start;
+      document.getElementById('endDate').value = end;
+      
+      closeDateRangeModal();
+      applyFilters();
+    }
+    
+    function applyFilters() {
+      currentPage = 1;
+      lastVisible = null;
+      loadTransactions();
+    }
+    
+    function resetFilters() {
+      document.getElementById('typeFilter').value = 'all';
+      document.getElementById('statusFilter').value = 'all';
+      document.getElementById('searchUser').value = '';
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      
+      applyFilters();
+    }
+    
+    function exportTransactions() {
+      const db = firebase.firestore();
+      
+      db.collection('transactions')
+        .orderBy('timestamp', 'desc')
+        .limit(1000)
+        .get()
+        .then(async (snapshot) => {
+          let csv = 'Date,User,Type,Amount,Status,Description\n';
+          
+          for (const doc of snapshot.docs) {
+            const trans = doc.data();
+            const date = trans.timestamp ? new Date(trans.timestamp.toDate()).toLocaleString() : 'N/A';
+            
+            // Get user details
+            let userName = 'Unknown';
+            if (trans.userId) {
+              const userDoc = await db.collection('users').doc(trans.userId).get();
+              if (userDoc.exists) {
+                userName = userDoc.data().username || userDoc.data().email || 'Unknown';
+              }
+            }
+            
+            csv += `"${date}","${userName}","${trans.type}","${trans.amount}","${trans.status}","${trans.description || ''}"\n`;
+          }
+          
+          // Download CSV
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+          a.click();
+        });
+    }
+    
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        loadTransactions();
+      }
+    }
+    
+    function nextPage() {
+      currentPage++;
+      loadTransactions();
+    }
+    
+    function logout() {
+      firebase.auth().signOut()
+        .then(() => {
+          window.location.href = 'login.html';
+        });
+    }
+  </script>
+</body>
+            </html>
