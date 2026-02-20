@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Promotion - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="mobile-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo">
+        <i class="fas fa-bullhorn"></i> Promotion
+      </div>
+      <div class="top-icons">
+        <i class="fas fa-chart-line"></i>
+      </div>
+    </div>
+
+    <!-- Promotion Stats -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 15px;">
+        <i class="fas fa-eye" style="font-size: 24px; color: white; margin-bottom: 5px;"></i>
+        <div style="color: white; font-size: 12px;">Total Clicks</div>
+        <div style="color: white; font-size: 24px; font-weight: bold;" id="totalClicks">0</div>
+      </div>
+      <div style="background: linear-gradient(135deg, #ff6b6b, #feca57); border-radius: 20px; padding: 15px;">
+        <i class="fas fa-user-plus" style="font-size: 24px; color: white; margin-bottom: 5px;"></i>
+        <div style="color: white; font-size: 12px;">Conversions</div>
+        <div style="color: white; font-size: 24px; font-weight: bold;" id="totalConversions">0</div>
+      </div>
+    </div>
+
+    <!-- Promotion Banner -->
+    <div class="promotion-card" style="margin-bottom: 20px;">
+      <i class="fas fa-crown" style="font-size: 50px; margin-bottom: 15px;"></i>
+      <h2 style="margin-bottom: 10px;">Become a Promoter</h2>
+      <p style="margin-bottom: 20px;">Earn up to 20% commission on every referral!</p>
+      <button class="btn" onclick="applyForPromoter()" style="background: white; color: #764ba2;">
+        <i class="fas fa-rocket"></i> Apply Now
+      </button>
+    </div>
+
+    <!-- Promotion Tools -->
+    <div style="margin-bottom: 20px;">
+      <h3 style="color: white; margin-bottom: 15px;">Promotion Tools</h3>
+      
+      <div style="background: rgba(255,255,255,0.15); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+          <div style="background: linear-gradient(45deg, #4facfe, #00f2fe); width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+            <i class="fas fa-link" style="color: white; font-size: 24px;"></i>
+          </div>
+          <div>
+            <h4 style="color: white; margin-bottom: 5px;">Referral Link</h4>
+            <p style="color: rgba(255,255,255,0.6); font-size: 12px;">Share this unique link</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="referralLink" class="form-control" value="https://cadbury.com/ref/CAD12345" readonly>
+          <button onclick="copyReferralLink()" class="btn-small" style="background: linear-gradient(45deg, #4facfe, #00f2fe);">
+            <i class="fas fa-copy"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div style="background: rgba(255,255,255,0.15); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+          <div style="background: linear-gradient(45deg, #ff6b6b, #feca57); width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+            <i class="fas fa-qrcode" style="color: white; font-size: 24px;"></i>
+          </div>
+          <div>
+            <h4 style="color: white; margin-bottom: 5px;">QR Code</h4>
+            <p style="color: rgba(255,255,255,0.6); font-size: 12px;">Scan to share</p>
+          </div>
+        </div>
+        <div style="text-align: center;">
+          <div id="qrcode" style="background: white; padding: 10px; display: inline-block; border-radius: 10px;"></div>
+          <button onclick="downloadQRCode()" class="btn btn-secondary" style="margin-top: 10px;">
+            <i class="fas fa-download"></i> Download QR
+          </button>
+        </div>
+      </div>
+      
+      <div style="background: rgba(255,255,255,0.15); border-radius: 20px; padding: 20px;">
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+          <div style="background: linear-gradient(45deg, #a8e063, #56ab2f); width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+            <i class="fas fa-images" style="color: white; font-size: 24px;"></i>
+          </div>
+          <div>
+            <h4 style="color: white; margin-bottom: 5px;">Banners & Creatives</h4>
+            <p style="color: rgba(255,255,255,0.6); font-size: 12px;">Download promotional materials</p>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <img src="https://via.placeholder.com/100x100/4facfe/ffffff?text=Banner1" style="width: 100%; border-radius: 10px;">
+          <img src="https://via.placeholder.com/100x100/ff6b6b/ffffff?text=Banner2" style="width: 100%; border-radius: 10px;">
+          <img src="https://via.placeholder.com/100x100/00f2fe/ffffff?text=Banner3" style="width: 100%; border-radius: 10px;">
+        </div>
+        <button class="btn btn-secondary" style="margin-top: 15px; width: 100%;">
+          <i class="fas fa-download"></i> Download All
+        </button>
+      </div>
+    </div>
+
+    <!-- Top Promoters -->
+    <div style="background: rgba(255,255,255,0.1); border-radius: 20px; padding: 15px;">
+      <h3 style="color: white; margin-bottom: 15px;">🏆 Top Promoters</h3>
+      <div id="topPromoters">
+        <div style="display: flex; align-items: center; margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+          <div style="width: 30px; color: gold; font-weight: bold;">1</div>
+          <i class="fas fa-user-circle" style="font-size: 30px; color: white; margin-right: 10px;"></i>
+          <div style="flex: 1;">
+            <div style="color: white;">John Doe</div>
+            <div style="color: rgba(255,255,255,0.6); font-size: 11px;">150 referrals</div>
+          </div>
+          <div style="color: #4caf50;">₹15,000</div>
+        </div>
+        <div style="display: flex; align-items: center; margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+          <div style="width: 30px; color: silver; font-weight: bold;">2</div>
+          <i class="fas fa-user-circle" style="font-size: 30px; color: white; margin-right: 10px;"></i>
+          <div style="flex: 1;">
+            <div style="color: white;">Jane Smith</div>
+            <div style="color: rgba(255,255,255,0.6); font-size: 11px;">120 referrals</div>
+          </div>
+          <div style="color: #4caf50;">₹12,000</div>
+        </div>
+        <div style="display: flex; align-items: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+          <div style="width: 30px; color: #cd7f32; font-weight: bold;">3</div>
+          <i class="fas fa-user-circle" style="font-size: 30px; color: white; margin-right: 10px;"></i>
+          <div style="flex: 1;">
+            <div style="color: white;">Mike Johnson</div>
+            <div style="color: rgba(255,255,255,0.6); font-size: 11px;">100 referrals</div>
+          </div>
+          <div style="color: #4caf50;">₹10,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="location.href='dashboard.html'">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" onclick="location.href='products.html'">
+        <i class="fas fa-box"></i>
+        <span>Products</span>
+      </div>
+      <div class="nav-item active" onclick="location.href='promotion.html'">
+        <i class="fas fa-bullhorn"></i>
+        <span>Promotion</span>
+      </div>
+      <div class="nav-item" onclick="location.href='profile.html'">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script>
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        loadPromotionData(user.uid);
+        generateQRCode(user.uid);
+      }
+    });
+    
+    function loadPromotionData(userId) {
+      const db = firebase.firestore();
+      
+      // Get clicks and conversions
+      db.collection('referralStats').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists) {
+            document.getElementById('totalClicks').textContent = doc.data().clicks || 0;
+            document.getElementById('totalConversions').textContent = doc.data().conversions || 0;
+          }
+        });
+      
+      // Get referral link
+      db.collection('users').doc(userId).get()
+        .then((doc) => {
+          if (doc.exists) {
+            const code = doc.data().referralCode;
+            document.getElementById('referralLink').value = `https://cadbury.com/ref/${code}`;
+          }
+        });
+    }
+    
+    function generateQRCode(userId) {
+      const qrcodeDiv = document.getElementById('qrcode');
+      new QRCode(qrcodeDiv, {
+        text: `https://cadbury.com/ref/${userId}`,
+        width: 150,
+        height: 150
+      });
+    }
+    
+    function copyReferralLink() {
+      const link = document.getElementById('referralLink');
+      link.select();
+      document.execCommand('copy');
+      alert('Referral link copied!');
+    }
+    
+    function downloadQRCode() {
+      const canvas = document.querySelector('#qrcode canvas');
+      const link = document.createElement('a');
+      link.download = 'qrcode.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+    
+    function applyForPromoter() {
+      const user = firebase.auth().currentUser;
+      
+      firebase.firestore().collection('promoterApplications').add({
+        userId: user.uid,
+        status: 'pending',
+        appliedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert('Application submitted! We will review it soon.');
+      });
+    }
+  </script>
+</body>
+</html>
