@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products - Cadbury Dairy Milk</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <div class="mobile-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo">
+        <i class="fas fa-arrow-left" onclick="history.back()" style="margin-right: 15px;"></i>
+        Products
+      </div>
+      <div class="top-icons">
+        <i class="fas fa-search"></i>
+        <i class="fas fa-filter"></i>
+      </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="products-grid" id="productsGrid">
+      <!-- Products will be loaded here dynamically -->
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="location.href='dashboard.html'">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item active" onclick="location.href='products.html'">
+        <i class="fas fa-box"></i>
+        <span>Products</span>
+      </div>
+      <div class="nav-item" onclick="location.href='promotion.html'">
+        <i class="fas fa-bullhorn"></i>
+        <span>Promotion</span>
+      </div>
+      <div class="nav-item" onclick="location.href='profile.html'">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        loadProducts();
+      }
+    });
+
+    function loadProducts() {
+      const db = firebase.firestore();
+      const productsGrid = document.getElementById('productsGrid');
+      
+      db.collection('products').where('active', '==', true).get()
+        .then((querySnapshot) => {
+          productsGrid.innerHTML = '';
+          querySnapshot.forEach((doc) => {
+            const product = doc.data();
+            productsGrid.innerHTML += `
+              <div class="product-item" onclick="viewProduct('${doc.id}')">
+                <img src="${product.image || 'https://via.placeholder.com/150x100/ff6b6b/ffffff?text=Product'}" alt="${product.name}">
+                <h3>${product.name}</h3>
+                <div class="price">₹${product.price}</div>
+                <div style="color: rgba(255,255,255,0.6); font-size: 11px; margin-top: 5px;">
+                  Daily: ₹${product.dailyProfit}
+                </div>
+              </div>
+            `;
+          });
+        });
+    }
+
+    function viewProduct(productId) {
+      window.location.href = `product-details.html?id=${productId}`;
+    }
+  </script>
+</body>
+</html>
